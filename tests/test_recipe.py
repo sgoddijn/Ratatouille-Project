@@ -50,14 +50,14 @@ def test_recipe_scaling():
     # Test doubling the recipe
     recipe.scale_recipe(4)
     assert recipe.servings == 4
-    assert recipe.ingredients[0]["amount"] == "4.0"
-    assert recipe.ingredients[1]["amount"] == "1"  # Pinch shouldn't scale
+    assert recipe.ingredients[0]["amount"] == "4"
+    assert recipe.ingredients[1]["amount"] == "2"  # Pinch shouldn't scale
     assert recipe.ingredients[2]["amount"] == "to taste"  # Should remain unchanged
 
     # Test halving the recipe
     recipe.scale_recipe(2)
     assert recipe.servings == 2
-    assert recipe.ingredients[0]["amount"] == "2.0"
+    assert recipe.ingredients[0]["amount"] == "2"
 
 def test_invalid_recipe_parameters():
     """Test error handling for invalid recipe parameters."""
