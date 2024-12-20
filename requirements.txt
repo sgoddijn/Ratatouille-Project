@@ -1,0 +1,9 @@
+# Core dependencies
+typing; python_version < '3.5'
+
+# Development dependencies
+pytest>=7.0
+pytest-cov>=4.0
+black>=22.0  # for code formatting
+flake8>=4.0  # for linting
+mypy>=0.900  # for type checking
