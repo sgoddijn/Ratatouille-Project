@@ -49,22 +49,37 @@ const RecipeManagement = () => {
 
   const handleRecipeSubmit = async (recipeData: { url?: string, file?: File }) => {
     try {
-      if (recipeData.url) {
-        // Handle URL submission
-        console.log('Processing URL:', recipeData.url);
-        // TODO: Send URL to backend for processing
-      }
+      let response;
       
-      if (recipeData.file) {
-        // Handle PDF submission
-        console.log('Processing file:', recipeData.file.name);
+      if (recipeData.url) {
+        response = await fetch('http://localhost:3000/api/recipes/url', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ url: recipeData.url }),
+        });
+      } else if (recipeData.file) {
         const formData = new FormData();
         formData.append('file', recipeData.file);
-        // TODO: Send file to backend for processing
+        
+        response = await fetch('http://localhost:3000/api/recipes/pdf', {
+          method: 'POST',
+          body: formData,
+        });
       }
+
+      if (!response?.ok) {
+        throw new Error('Failed to process recipe');
+      }
+
+      const recipe = await response.json();
+      console.log('Processed recipe:', recipe);
+      // TODO: Add recipe to state/storage
+      
     } catch (error) {
       console.error('Error processing recipe:', error);
-      // TODO: Add error handling
+      // TODO: Show error message to user
     }
   };
 
