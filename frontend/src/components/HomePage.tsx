@@ -3,6 +3,7 @@ import { styled } from '@mui/material/styles';
 import RestaurantMenuIcon from '@mui/icons-material/RestaurantMenu';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import LocalGroceryStoreIcon from '@mui/icons-material/LocalGroceryStore';
+import { useNavigate } from 'react-router-dom';
 
 const HeroSection = styled(Box)(({ theme }) => ({
   background: 'linear-gradient(45deg, #FE6B8B 30%, #FF8E53 90%)',
@@ -22,6 +23,11 @@ const FeatureCard = styled(Paper)(({ theme }) => ({
 }));
 
 const HomePage = () => {
+  const navigate = useNavigate();
+  const handleGetStarted = () => {
+    navigate('/signup');
+  };
+
   return (
     <Box>
       <HeroSection>
@@ -33,6 +39,7 @@ const HomePage = () => {
             Your personal chef for meal planning and recipe management
           </Typography>
           <Button
+            onClick={handleGetStarted}
             variant="contained"
             size="large"
             sx={{ 
