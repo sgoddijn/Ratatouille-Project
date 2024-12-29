@@ -1,6 +1,8 @@
 import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import HomePage from './components/HomePage';
+import RecipeManagement from './components/RecipeManagement';
+import MealPlan from './components/MealPlan';
 
 const theme = createTheme({
   palette: {
@@ -29,7 +31,8 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/signup" element={<div>Signup Page</div>} />
+          <Route path="/recipeManagement" element={<RecipeManagement />} />
+          <Route path="/mealPlan" element={<MealPlan />} />
         </Routes>
       </Router>
     </ThemeProvider>

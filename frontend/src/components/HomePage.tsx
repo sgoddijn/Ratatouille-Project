@@ -24,8 +24,12 @@ const FeatureCard = styled(Paper)(({ theme }) => ({
 
 const HomePage = () => {
   const navigate = useNavigate();
-  const handleGetStarted = () => {
-    navigate('/signup');
+  const handleRecipes = () => {
+    navigate('/recipeManagement');
+  };
+
+  const handleMealPlan = () => {
+    navigate('/mealPlan');
   };
 
   return (
@@ -38,28 +42,20 @@ const HomePage = () => {
           <Typography variant="h5" paragraph>
             Your personal chef for meal planning and recipe management
           </Typography>
-          <Button
-            onClick={handleGetStarted}
-            variant="contained"
-            size="large"
-            sx={{ 
-              mt: 4,
-              bgcolor: 'white',
-              color: '#FE6B8B',
-              '&:hover': {
-                bgcolor: 'rgba(255, 255, 255, 0.9)',
-              },
-            }}
-          >
-            Get Started
-          </Button>
         </Container>
       </HeroSection>
 
       <Container maxWidth="lg" sx={{ my: 8 }}>
         <Grid container spacing={4}>
           <Grid item xs={12} md={4}>
-            <FeatureCard elevation={3}>
+            <FeatureCard 
+              elevation={3}
+              sx={{ 
+                cursor: 'pointer',
+                '&:hover': { transform: 'scale(1.02)', transition: 'transform 0.2s' }
+              }}
+              onClick={handleRecipes}
+            >
               <RestaurantMenuIcon sx={{ fontSize: 40, color: '#FE6B8B' }} />
               <Typography variant="h5" component="h2">
                 Recipe Management
@@ -71,7 +67,14 @@ const HomePage = () => {
           </Grid>
 
           <Grid item xs={12} md={4}>
-            <FeatureCard elevation={3}>
+            <FeatureCard 
+              elevation={3}
+              sx={{ 
+                cursor: 'pointer',
+                '&:hover': { transform: 'scale(1.02)', transition: 'transform 0.2s' }
+              }}
+              onClick={handleMealPlan}
+            >
               <CalendarMonthIcon sx={{ fontSize: 40, color: '#FF8E53' }} />
               <Typography variant="h5" component="h2">
                 Meal Planning
