@@ -12,8 +12,9 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import { styled } from '@mui/material/styles';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AddRecipeDialog from './AddRecipeDialog';
+import { Recipe } from '../models/Recipe';
 
 const StyledFab = styled(Fab)(({ theme }) => ({
   position: 'fixed',
@@ -21,27 +22,27 @@ const StyledFab = styled(Fab)(({ theme }) => ({
   right: theme.spacing(4),
 }));
 
-// Temporary mock data - replace with actual data later
-const mockRecipes = [
-  {
-    id: 1,
-    title: 'Spaghetti Carbonara',
-    description: 'Classic Italian pasta dish with eggs, cheese, pancetta, and pepper',
-    imageUrl: 'https://placehold.co/400x200',
-    cookTime: '30 mins',
-  },
-  {
-    id: 2,
-    title: 'Chicken Stir Fry',
-    description: 'Quick and healthy chicken with mixed vegetables',
-    imageUrl: 'https://placehold.co/400x200',
-    cookTime: '20 mins',
-  },
-  // Add more mock recipes as needed
-];
-
 const RecipeManagement = () => {
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchRecipes();
+  }, []);
+
+  const fetchRecipes = async () => {
+    try {
+      const response = await fetch('http://localhost:3000/api/recipes');
+      if (!response.ok) throw new Error('Failed to fetch recipes');
+      const data = await response.json();
+      setRecipes(data);
+    } catch (error) {
+      console.error('Error fetching recipes:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleAddRecipe = () => {
     setIsAddDialogOpen(true);
@@ -75,11 +76,15 @@ const RecipeManagement = () => {
 
       const recipe = await response.json();
       console.log('Processed recipe:', recipe);
-      // TODO: Add recipe to state/storage
+
+      // Refresh the recipes list
+      fetchRecipes();
+      
+      // Close the dialog
+      setIsAddDialogOpen(false);
       
     } catch (error) {
       console.error('Error processing recipe:', error);
-      // TODO: Show error message to user
     }
   };
 
@@ -98,37 +103,43 @@ const RecipeManagement = () => {
       </Typography>
       
       <Grid container spacing={4}>
-        {mockRecipes.map((recipe) => (
-          <Grid item xs={12} sm={6} md={4} key={recipe.id}>
-            <Card>
-              <CardMedia
-                component="img"
-                height="200"
-                image={recipe.imageUrl}
-                alt={recipe.title}
-              />
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  {recipe.title}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {recipe.description}
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                  Cook Time: {recipe.cookTime}
-                </Typography>
-              </CardContent>
-              <CardActions>
-                <Button size="small" onClick={() => handleEditRecipe(recipe.id)}>
-                  Edit
-                </Button>
-                <Button size="small" color="error" onClick={() => handleDeleteRecipe(recipe.id)}>
-                  Delete
-                </Button>
-              </CardActions>
-            </Card>
-          </Grid>
-        ))}
+        {isLoading ? (
+          <Typography>Loading recipes...</Typography>
+        ) : recipes.length === 0 ? (
+          <Typography>No recipes yet. Add your first recipe!</Typography>
+        ) : (
+          recipes.map((recipe) => (
+            <Grid item xs={12} sm={6} md={4} key={recipe.id}>
+              <Card>
+                <CardMedia
+                  component="img"
+                  height="200"
+                  image={recipe.imageUrl}
+                  alt={recipe.title}
+                />
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    {recipe.title}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {recipe.description}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                    Cook Time: {recipe.cookTime}
+                  </Typography>
+                </CardContent>
+                <CardActions>
+                  <Button size="small" onClick={() => handleEditRecipe(recipe.id)}>
+                    Edit
+                  </Button>
+                  <Button size="small" color="error" onClick={() => handleDeleteRecipe(recipe.id)}>
+                    Delete
+                  </Button>
+                </CardActions>
+              </Card>
+            </Grid>
+          ))
+        )}
       </Grid>
 
       <StyledFab 
