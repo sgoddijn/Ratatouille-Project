@@ -1,14 +1,6 @@
 import fs from 'fs';
 import pdf from 'pdf-parse';
-
-interface Recipe {
-  title: string;
-  description: string;
-  ingredients: string[];
-  instructions: string[];
-  cookTime?: string;
-  imageUrl?: string;
-}
+import { Recipe, createEmptyRecipe } from '../../../shared/Recipe';
 
 export async function processPdf(filePath: string): Promise<Recipe> {
   try {
@@ -17,14 +9,7 @@ export async function processPdf(filePath: string): Promise<Recipe> {
     
     // TODO: Implement actual PDF parsing logic
     // This is a placeholder implementation
-    return {
-      title: 'PDF Recipe Title',
-      description: 'PDF Recipe Description',
-      ingredients: ['Ingredient 1', 'Ingredient 2'],
-      instructions: ['Step 1', 'Step 2'],
-      cookTime: '30 mins',
-      imageUrl: 'https://placehold.co/400x200'
-    };
+    return createEmptyRecipe();
   } catch (error) {
     console.error('Error processing PDF:', error);
     throw new Error('Failed to process recipe PDF');

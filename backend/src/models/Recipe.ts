@@ -8,14 +8,15 @@ const macrosSchema = new mongoose.Schema({
 });
 
 const recipeSchema = new mongoose.Schema({
+  id: { type: String, required: true },
   title: { type: String, required: true },
   description: { type: String, required: true },
-  ingredients: [{ type: String, required: true }],
-  instructions: [{ type: String, required: true }],
+  ingredients: [{ type: [String], required: true }],
+  instructions: [{ type: [String], required: true }],
   cookTime: String,
   imageUrl: String,
   macros: { type: macrosSchema, required: true },
   createdAt: { type: Date, default: Date.now },
 });
 
-export const Recipe = mongoose.model('Recipe', recipeSchema); 
+export const Recipe = mongoose.model('Recipe', recipeSchema);

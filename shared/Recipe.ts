@@ -14,3 +14,18 @@ export interface Recipe {
     };
     createdAt: Date;
   }
+
+  export const createEmptyRecipe = (): Recipe => ({
+    id: '',
+    title: '',
+    description: '',
+    ingredients: [],
+    instructions: [],
+    macros: {
+      calories: 0,
+      protein: 0,
+      carbs: 0,
+      fat: 0
+    },
+    createdAt: new Date()
+  }); 

@@ -14,7 +14,7 @@ import AddIcon from '@mui/icons-material/Add';
 import { styled } from '@mui/material/styles';
 import { useState, useEffect } from 'react';
 import AddRecipeDialog from './AddRecipeDialog';
-import { Recipe } from '../models/Recipe';
+import { Recipe } from '../../../shared/Recipe';
 
 const StyledFab = styled(Fab)(({ theme }) => ({
   position: 'fixed',
@@ -53,6 +53,7 @@ const RecipeManagement = () => {
       let response;
       
       if (recipeData.url) {
+        console.log(recipeData.url);
         response = await fetch('http://localhost:3000/api/recipes/url', {
           method: 'POST',
           headers: {
@@ -70,6 +71,7 @@ const RecipeManagement = () => {
         });
       }
 
+      console.log(response);
       if (!response?.ok) {
         throw new Error('Failed to process recipe');
       }
