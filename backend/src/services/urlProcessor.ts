@@ -3,7 +3,7 @@ import { Recipe, createEmptyRecipe } from '../../../shared/Recipe';
 import { create } from 'domain';
 
 const anthropic = new Anthropic({
-  apiKey: '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',
+  apiKey: process.env.ANTHROPIC_API_KEY!,
 });
 
 const model = "claude-3-5-sonnet-20241022";
