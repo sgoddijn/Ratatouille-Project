@@ -1,6 +1,6 @@
+import axios from 'axios';
 import Anthropic from '@anthropic-ai/sdk';
-import { Recipe, createEmptyRecipe } from '../../../shared/Recipe';
-import { create } from 'domain';
+import { Recipe, createEmptyRecipe } from '../../../shared/Recipe.ts';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!,
@@ -9,10 +9,29 @@ const anthropic = new Anthropic({
 const model = "claude-3-5-sonnet-20241022";
 const max_tokens = 1024;
 const temperature = 0;
-const systemPrompt = "You are a culinary analyst, who's goal is to transfer recipes from the internet into a database that can be used by amateur chefs";
+const systemPrompt = "You are a culinary analyst, who's goal is to transfer recipes from HTML content into a structured format for amateur chefs";
 
 export async function processUrl(url: string): Promise<Recipe> {
   try {
+    // First fetch the HTML content
+    const response = await axios.get(url);
+    const rawHtml = response.data;
+
+    // Remove scripts, styles, and other non-content elements
+    const cleanHtml = rawHtml
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+      .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
+      .replace(/<[^>]*>/g, '\n') // Convert remaining HTML tags to newlines
+      .replace(/&nbsp;/g, ' ') // Convert non-breaking spaces
+      .replace(/&amp;/g, '&') // Convert HTML entities
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/\s+/g, ' ') // Normalize whitespace
+      .trim();
+
+    // Then ask Claude to parse the HTML
     const msg = await anthropic.messages.create({
       model: model,
       max_tokens: max_tokens,
@@ -24,60 +43,58 @@ export async function processUrl(url: string): Promise<Recipe> {
           "content": [
             {
               "type": "text",
-              "text": `Take information from the following URL ${url} and convert its content into the following JSON object. Return only that json object and nothing else. 
-              Note that the macro information about calories, protein, carbs and fat can often be found explicitly either in a dedicated section or in the text of the recipe.
-              Recipes may come in different languages and formats so be aware of that.
-              We want the calories to be representative of a single serving, so if the macros represent multiple servings please divide them appropraitely.
-                    
-                    id: string;
-                    title: string;
-                    description: string;
-                    ingredients: string[];
-                    instructions: string[];
-                    cookTime?: string;
-                    imageUrl?: string;
-                    macros: {
-                        calories: number;
-                        protein: number;
-                        carbs: number;
-                        fat: number;
-                    };`
+              "text": `Parse this HTML content and extract the recipe information into a JSON object. Return only the JSON object and nothing else.
+              Note that macro information (calories, protein, carbs, fat) should be per serving.
+              Also note that sometimes the recipe is for multiple servings, but macro information is already done per serving, so be aware of that. 
+              HTML content:
+              
+              ${cleanHtml}
+              
+              Required JSON format:
+              {
+                id: string,
+                title: string,
+                description: string,
+                ingredients: string[],
+                instructions: string[],
+                cookTime?: string,
+                imageUrl?: string,
+                macros: {
+                  calories: number,
+                  protein: number,
+                  carbs: number,
+                  fat: number
+                }
+              }`
             }
           ]
         }
       ]
     });
 
+    // Rest of the code stays the same
     const parsedRecipe = msg.content[0].type === 'text' ? JSON.parse(msg.content[0].text) : createEmptyRecipe();
     console.log('Claude response:', parsedRecipe);
     
-    try {      
-      // Create a valid Recipe object
-      const recipe: Recipe = {
-        id: parsedRecipe.id || String(Date.now()), // Generate ID if none provided
-        title: parsedRecipe.title || 'Untitled Recipe',
-        description: parsedRecipe.description || '',
-        ingredients: Array.isArray(parsedRecipe.ingredients) ? parsedRecipe.ingredients : [],
-        instructions: Array.isArray(parsedRecipe.instructions) ? parsedRecipe.instructions : [],
-        macros: parsedRecipe.macros || {
-          calories: 0,
-          protein: 0,
-          carbs: 0,
-          fat: 0
-        },
-        cookTime: parsedRecipe.cookTime,
-        imageUrl: parsedRecipe.imageUrl,
-        createdAt: new Date()
-      };
+    return {
+      id: parsedRecipe.id || String(Date.now()),
+      title: parsedRecipe.title || 'Untitled Recipe',
+      description: parsedRecipe.description || '',
+      ingredients: Array.isArray(parsedRecipe.ingredients) ? parsedRecipe.ingredients : [],
+      instructions: Array.isArray(parsedRecipe.instructions) ? parsedRecipe.instructions : [],
+      macros: parsedRecipe.macros || {
+        calories: 0,
+        protein: 0,
+        carbs: 0,
+        fat: 0
+      },
+      cookTime: parsedRecipe.cookTime,
+      imageUrl: parsedRecipe.imageUrl,
+      createdAt: new Date()
+    };
 
-      return recipe;
-      
-    } catch (parseError) {
-      console.error('Failed to parse Claude response:', parseError);
-      return createEmptyRecipe();
-    }
   } catch (error) {
-    console.error('Error fetching URL:', error);
+    console.error('Error processing URL:', error);
     throw new Error('Failed to process recipe URL');
   }
 } 

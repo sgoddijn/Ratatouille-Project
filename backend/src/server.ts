@@ -2,10 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
 import { Request, Response, RequestHandler } from 'express';
-import { connectDB } from './config/database';
-import { Recipe } from './models/Recipe';
-import { processUrl } from './services/urlProcessor';
-import { processPdf } from './services/pdfProcessor';
+import { connectDB } from './config/database.ts';
+import { Recipe } from './models/Recipe.ts';
+import { processUrl } from './services/urlProcessor.ts';
 
 const app = express();
 const upload = multer({ dest: 'uploads/' });
