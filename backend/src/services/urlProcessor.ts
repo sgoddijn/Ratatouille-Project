@@ -9,7 +9,7 @@ const anthropic = new Anthropic({
 const model = "claude-3-5-sonnet-20241022";
 const max_tokens = 1024;
 const temperature = 0;
-const systemPrompt = "You are a chef that is providing recipes for new cooks to follow";
+const systemPrompt = "You are a culinary analyst, who's goal is to transfer recipes from the internet into a database that can be used by amateur chefs";
 
 export async function processUrl(url: string): Promise<Recipe> {
   try {
@@ -25,6 +25,9 @@ export async function processUrl(url: string): Promise<Recipe> {
             {
               "type": "text",
               "text": `Take information from the following URL ${url} and convert its content into the following JSON object. Return only that json object and nothing else. 
+              Note that the macro information about calories, protein, carbs and fat can often be found explicitly either in a dedicated section or in the text of the recipe.
+              Recipes may come in different languages and formats so be aware of that.
+              We want the calories to be representative of a single serving, so if the macros represent multiple servings please divide them appropraitely.
                     
                     id: string;
                     title: string;

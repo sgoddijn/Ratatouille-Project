@@ -15,6 +15,7 @@ import { styled } from '@mui/material/styles';
 import { useState, useEffect } from 'react';
 import AddRecipeDialog from './AddRecipeDialog';
 import { Recipe } from '../../../shared/Recipe';
+import { useNavigate } from 'react-router-dom';
 
 const StyledFab = styled(Fab)(({ theme }) => ({
   position: 'fixed',
@@ -26,6 +27,7 @@ const RecipeManagement = () => {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchRecipes();
@@ -98,6 +100,10 @@ const RecipeManagement = () => {
     console.log('Delete recipe', id);
   };
 
+  const handleRecipeClick = (recipe: Recipe) => {
+    navigate(`/recipe/${recipe.id}`, { state: { recipe } });
+  };
+
   return (
     <Container sx={{ py: 4 }}>
       <Typography variant="h4" component="h1" gutterBottom>
@@ -112,7 +118,10 @@ const RecipeManagement = () => {
         ) : (
           recipes.map((recipe) => (
             <Grid item xs={12} sm={6} md={4} key={recipe.id}>
-              <Card>
+              <Card 
+                sx={{ cursor: 'pointer' }}
+                onClick={() => handleRecipeClick(recipe)}
+              >
                 <CardMedia
                   component="img"
                   height="200"

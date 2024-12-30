@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import HomePage from './components/HomePage';
 import RecipeManagement from './components/RecipeManagement';
 import MealPlan from './components/MealPlan';
+import RecipeDetails from './components/RecipeDetails';
 
 const theme = createTheme({
   palette: {
@@ -33,6 +34,7 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/recipeManagement" element={<RecipeManagement />} />
           <Route path="/mealPlan" element={<MealPlan />} />
+          <Route path="/recipe/:id" element={<RecipeDetails />} />
         </Routes>
       </Router>
     </ThemeProvider>
