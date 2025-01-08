@@ -34,6 +34,7 @@ const DayCard = styled(Paper)(({ theme }) => ({
   height: '100%',
   display: 'flex',
   flexDirection: 'column',
+  width: `46%`,
   gap: theme.spacing(2),
   marginBottom: theme.spacing(2),
 }));
@@ -73,6 +74,13 @@ const MacrosBox = styled(Box)(({ theme }) => ({
 
 const MealsContainer = styled(Box)(({ theme }) => ({
   display: 'flex',
+  gap: theme.spacing(2),
+  marginTop: theme.spacing(2),
+}));
+
+const MealTypesContainer = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  flexDirection: 'column',
   gap: theme.spacing(2),
   marginTop: theme.spacing(2),
 }));
@@ -137,7 +145,7 @@ const MealPlan = () => {
   };
 
   return (
-    <Container sx={{ py: 4 }}>
+    <Container maxWidth='100%' sx={{ py: '4'}}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
         <Typography variant="h4" component="h1">
           Next Week's Meal Plan
@@ -151,9 +159,10 @@ const MealPlan = () => {
         </Button>
       </Box>
       
-      {days.map((day) => (
-        <DayCard key={day} elevation={2}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxSizing: 'revert', flexDirection: 'row', flexWrap: 'wrap'}}>
+        {days.map((day) => (
+          <DayCard key={day} elevation={2}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexDirection: 'column', flexWrap: 'wrap' }}>
             <Typography variant="h6" component="h2" sx={{ textTransform: 'capitalize' }}>
               {day}
             </Typography>
@@ -170,60 +179,66 @@ const MealPlan = () => {
           <Divider />
           
           <MealsContainer>
-            {mealTypes.map((mealType) => (
-              <MealSlotBox 
-                key={mealType} 
-                elevation={1}
-                onClick={() => weekPlan[day]?.[mealType] && handleRecipeClick(weekPlan[day][mealType])}
-              >
-                <Typography variant="subtitle1" sx={{ textTransform: 'capitalize' }}>
-                  {mealType}
-                </Typography>
-                {weekPlan[day]?.[mealType] ? (
-                  <>
-                    {weekPlan[day][mealType].imageUrl && (
-                      <RecipeImage 
-                        src={weekPlan[day][mealType].imageUrl} 
-                        alt={weekPlan[day][mealType].title}
-                      />
+
+              {mealTypes.map((mealType) => (
+                <MealTypesContainer>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <Typography variant="subtitle1" sx={{ textTransform: 'capitalize' }}>
+                    {mealType}
+                    </Typography>
+                  </Box>
+                  <MealSlotBox 
+                    key={mealType} 
+                    elevation={1}
+                    onClick={() => weekPlan[day]?.[mealType] && handleRecipeClick(weekPlan[day][mealType])}
+                  >
+                    {weekPlan[day]?.[mealType] ? (
+                      <>
+                        {weekPlan[day][mealType].imageUrl && (
+                          <RecipeImage 
+                            src={weekPlan[day][mealType].imageUrl} 
+                            alt={weekPlan[day][mealType].title}
+                          />
+                        )}
+                        <Typography variant="body1" sx={{ pr: 9 }}>
+                          {weekPlan[day][mealType].title}
+                        </Typography>
+                        <Typography 
+                          variant="body2" 
+                          color="text.secondary" 
+                          sx={{ 
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                            flex: 1
+                          }}
+                        >
+                          {weekPlan[day][mealType].description}
+                        </Typography>
+                        <MacrosBox>
+                          <Typography variant="caption">
+                            {weekPlan[day][mealType].macros.calories} cal
+                          </Typography>
+                        </MacrosBox>
+                      </>
+                    ) : (
+                      <>
+                        <Typography color="text.secondary" sx={{ flex: 1 }}>
+                          No recipe chosen
+                        </Typography>
+                        <MacrosBox>
+                          <Typography variant="caption">No macros yet</Typography>
+                        </MacrosBox>
+                      </>
                     )}
-                    <Typography variant="body1" sx={{ pr: 9 }}>
-                      {weekPlan[day][mealType].title}
-                    </Typography>
-                    <Typography 
-                      variant="body2" 
-                      color="text.secondary" 
-                      sx={{ 
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden',
-                        flex: 1
-                      }}
-                    >
-                      {weekPlan[day][mealType].description}
-                    </Typography>
-                    <MacrosBox>
-                      <Typography variant="caption">
-                        {weekPlan[day][mealType].macros.calories} cal
-                      </Typography>
-                    </MacrosBox>
-                  </>
-                ) : (
-                  <>
-                    <Typography color="text.secondary" sx={{ flex: 1 }}>
-                      No recipe chosen
-                    </Typography>
-                    <MacrosBox>
-                      <Typography variant="caption">No macros yet</Typography>
-                    </MacrosBox>
-                  </>
-                )}
-              </MealSlotBox>
-            ))}
-          </MealsContainer>
-        </DayCard>
-      ))}
+                  </MealSlotBox>
+                </MealTypesContainer>
+              ))}
+            </MealsContainer>
+          </DayCard>
+        ))}
+      </Box>
     </Container>
   );
 };
