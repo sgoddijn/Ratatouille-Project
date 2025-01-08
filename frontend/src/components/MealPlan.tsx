@@ -1,5 +1,7 @@
-import { Container, Typography, Paper, Grid, Box, Divider } from '@mui/material';
+import React, { useState } from 'react';
+import { Container, Typography, Paper, Grid, Box, Divider, Button } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 
 interface Macros {
   calories: number;
@@ -17,6 +19,16 @@ interface Recipe {
 interface MealSlot {
   recipe?: Recipe;
   type: 'breakfast' | 'lunch' | 'dinner';
+}
+
+interface DayPlan {
+  breakfast?: Recipe;
+  lunch?: Recipe;
+  dinner?: Recipe;
+}
+
+interface WeekPlan {
+  [key: string]: DayPlan;
 }
 
 const DayCard = styled(Paper)(({ theme }) => ({
@@ -57,39 +69,65 @@ const MealsContainer = styled(Box)(({ theme }) => ({
 }));
 
 const MealPlan = () => {
-  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  const [weekPlan, setWeekPlan] = useState<WeekPlan>({});
+  const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
   const mealTypes: Array<'breakfast' | 'lunch' | 'dinner'> = ['breakfast', 'lunch', 'dinner'];
 
-  const calculateDayMacros = (meals: MealSlot[]): Macros => {
+  const calculateDayMacros = (dayPlan: DayPlan): Macros => {
     const initial: Macros = { calories: 0, protein: 0, carbs: 0, fat: 0 };
-    return meals.reduce((acc, meal) => {
-      if (!meal.recipe) return acc;
+    return Object.values(dayPlan).reduce((acc, meal) => {
+      if (!meal) return acc;
       return {
-        calories: acc.calories + meal.recipe.macros.calories,
-        protein: acc.protein + meal.recipe.macros.protein,
-        carbs: acc.carbs + meal.recipe.macros.carbs,
-        fat: acc.fat + meal.recipe.macros.fat,
+        calories: acc.calories + meal.macros.calories,
+        protein: acc.protein + meal.macros.protein,
+        carbs: acc.carbs + meal.macros.carbs,
+        fat: acc.fat + meal.macros.fat,
       };
     }, initial);
   };
 
+  const handleGeneratePlan = async () => {
+    try {
+      const response = await fetch('http://localhost:3000/api/mealplan/generate', {
+        method: 'POST'
+      });
+      if (!response.ok) throw new Error('Failed to generate meal plan');
+      const plan = await response.json();
+      setWeekPlan(plan);
+    } catch (error) {
+      console.error('Error:', error);
+      // TODO: Show error to user
+    }
+  };
+
   return (
     <Container sx={{ py: 4 }}>
-      <Typography variant="h4" component="h1" gutterBottom>
-        Next Week's Meal Plan
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+        <Typography variant="h4" component="h1">
+          Next Week's Meal Plan
+        </Typography>
+        <Button 
+          variant="contained" 
+          startIcon={<AutoFixHighIcon />}
+          onClick={handleGeneratePlan}
+        >
+          Generate Plan
+        </Button>
+      </Box>
       
       {days.map((day) => (
         <DayCard key={day} elevation={2}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="h6" component="h2">
+            <Typography variant="h6" component="h2" sx={{ textTransform: 'capitalize' }}>
               {day}
             </Typography>
             <MacrosBox>
-              <Typography>0 cal</Typography>
-              <Typography>0g protein</Typography>
-              <Typography>0g carbs</Typography>
-              <Typography>0g fat</Typography>
+              <>
+                <Typography>{weekPlan[day] ? calculateDayMacros(weekPlan[day]).calories : 0} cal</Typography>
+                <Typography>{weekPlan[day] ? calculateDayMacros(weekPlan[day]).protein : 0}g protein</Typography>
+                <Typography>{weekPlan[day] ? calculateDayMacros(weekPlan[day]).fat : 0}g fat</Typography>
+                <Typography>{weekPlan[day] ? calculateDayMacros(weekPlan[day]).carbs : 0}g carbs</Typography>
+              </>
             </MacrosBox>
           </Box>
           
@@ -101,12 +139,27 @@ const MealPlan = () => {
                 <Typography variant="subtitle1" sx={{ textTransform: 'capitalize' }}>
                   {mealType}
                 </Typography>
-                <Typography color="text.secondary" sx={{ flex: 1 }}>
-                  Drop a recipe here
-                </Typography>
-                <MacrosBox>
-                  <Typography variant="caption">No macros yet</Typography>
-                </MacrosBox>
+                {weekPlan[day]?.[mealType] ? (
+                  <>
+                    <Typography variant="body1">
+                      {weekPlan[day][mealType].title}
+                    </Typography>
+                    <MacrosBox>
+                      <Typography variant="caption">
+                        {weekPlan[day][mealType].macros.calories} cal
+                      </Typography>
+                    </MacrosBox>
+                  </>
+                ) : (
+                  <>
+                    <Typography color="text.secondary" sx={{ flex: 1 }}>
+                      No recipe chosen
+                    </Typography>
+                    <MacrosBox>
+                      <Typography variant="caption">No macros yet</Typography>
+                    </MacrosBox>
+                  </>
+                )}
               </MealSlotBox>
             ))}
           </MealsContainer>

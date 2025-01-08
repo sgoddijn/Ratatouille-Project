@@ -1,9 +1,10 @@
+import React from 'react';
 import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import HomePage from './components/HomePage';
-import RecipeManagement from './components/RecipeManagement';
-import MealPlan from './components/MealPlan';
-import RecipeDetails from './components/RecipeDetails';
+import HomePage from './components/HomePage.tsx';
+import RecipeManagement from './components/RecipeManagement.tsx';
+import MealPlan from './components/MealPlan.tsx';
+import RecipeDetails from './components/RecipeDetails.tsx';
 
 const theme = createTheme({
   palette: {

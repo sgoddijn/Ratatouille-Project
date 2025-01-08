@@ -5,6 +5,9 @@ import { Request, Response, RequestHandler } from 'express';
 import { connectDB } from './config/database.ts';
 import { Recipe } from './models/Recipe.ts';
 import { processUrl } from './services/urlProcessor.ts';
+import process from 'node:process';
+import { generateMealPlan } from './services/planBuilder.ts';
+import { Recipe as RecipeType } from "../../shared/Recipe.ts";
 
 const app = express();
 const upload = multer({ dest: 'uploads/' });
@@ -65,30 +68,34 @@ app.post('/api/recipes/pdf', upload.single('file'), (async (req: Request, res: R
   }
 }) as RequestHandler);
 
-// Test endpoint to add a recipe
-app.post('/api/recipes/test', (async (_req: Request, res: Response) => {
+// Create a meal plan from the existing recipes
+// TODO: Figure out how to grab a representative subset of recipes from BE 
+app.post('/api/mealplan/generate', (async (_req: Request, res: Response) => {
   try {
-    const testRecipe = new Recipe({
-      title: "Test Spaghetti Carbonara",
-      description: "A classic Italian pasta dish",
-      ingredients: ["400g spaghetti", "200g pancetta", "4 eggs", "100g parmesan"],
-      instructions: ["Boil pasta", "Fry pancetta", "Mix eggs and cheese", "Combine all"],
-      cookTime: "20 mins",
-      imageUrl: "https://placehold.co/400x200",
-      macros: {
-        calories: 800,
-        protein: 30,
-        carbs: 90,
-        fat: 35
-      }
-    });
+    // Fetch all recipes from DB
+    const recipes = await Recipe.find().lean().exec();
 
-    await testRecipe.save();
-    console.log('Test recipe saved:', testRecipe);
-    res.json(testRecipe);
+    // Generate initial plan with recipe IDs
+    const mealPlanWithIds = await generateMealPlan(recipes);
+
+    // Create a map of recipe IDs to full recipe objects
+    const recipeMap = new Map(recipes.map((recipe: RecipeType) => [recipe.id, recipe]));
+
+    // Replace IDs with full recipe objects
+    const fullMealPlan = Object.entries(mealPlanWithIds).reduce((acc, [day, meals]) => {
+      acc[day] = {
+        breakfast: recipeMap.get(meals.breakfast),
+        lunch: recipeMap.get(meals.lunch),
+        dinner: recipeMap.get(meals.dinner)
+      };
+      return acc;
+    }, {} as Record<string, { breakfast: RecipeType, lunch: RecipeType, dinner: RecipeType }>);
+
+    res.json(fullMealPlan);
+
   } catch (error) {
-    console.error('Error adding test recipe:', error);
-    res.status(500).json({ error: 'Failed to add test recipe' });
+    console.error('Error generating meal plan:', error);
+    res.status(500).json({ error: 'Failed to generate meal plan' });
   }
 }) as RequestHandler);
 
