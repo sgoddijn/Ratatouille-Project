@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Container, Typography, Paper, Grid, Box, Divider, Button } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
+import { useNavigate } from 'react-router-dom';
 
 interface Macros {
   calories: number;
@@ -14,11 +15,8 @@ interface Recipe {
   id: number;
   title: string;
   macros: Macros;
-}
-
-interface MealSlot {
-  recipe?: Recipe;
-  type: 'breakfast' | 'lunch' | 'dinner';
+  imageUrl?: string;
+  description?: string;
 }
 
 interface DayPlan {
@@ -43,17 +41,28 @@ const DayCard = styled(Paper)(({ theme }) => ({
 const MealSlotBox = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(2),
   flex: 1,
-  minHeight: '120px',
+  minHeight: '225px',
   display: 'flex',
   flexDirection: 'column',
   gap: theme.spacing(1),
   cursor: 'pointer',
   transition: 'transform 0.2s, box-shadow 0.2s',
+  position: 'relative',
   '&:hover': {
     transform: 'translateY(-2px)',
     boxShadow: theme.shadows[4],
   },
 }));
+
+const RecipeImage = styled('img')({
+  position: 'absolute',
+  top: 8,
+  right: 8,
+  width: '60px',
+  height: '60px',
+  borderRadius: '4px',
+  objectFit: 'cover',
+});
 
 const MacrosBox = styled(Box)(({ theme }) => ({
   display: 'flex',
@@ -69,9 +78,24 @@ const MealsContainer = styled(Box)(({ theme }) => ({
 }));
 
 const MealPlan = () => {
+  const navigate = useNavigate();
   const [weekPlan, setWeekPlan] = useState<WeekPlan>({});
   const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
   const mealTypes: Array<'breakfast' | 'lunch' | 'dinner'> = ['breakfast', 'lunch', 'dinner'];
+
+  useEffect(() => {
+    const loadCurrentPlan = async () => {
+      try {
+        const response = await fetch('http://localhost:3000/api/mealplan/current');
+        if (!response.ok) throw new Error('Failed to fetch meal plan');
+        const plan = await response.json();
+        setWeekPlan(plan);
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    };
+    loadCurrentPlan();
+  }, []);
 
   const calculateDayMacros = (dayPlan: DayPlan): Macros => {
     const initial: Macros = { calories: 0, protein: 0, carbs: 0, fat: 0 };
@@ -94,10 +118,22 @@ const MealPlan = () => {
       if (!response.ok) throw new Error('Failed to generate meal plan');
       const plan = await response.json();
       setWeekPlan(plan);
+
+      await fetch('http://localhost:3000/api/mealplan/save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ weekPlan: plan }),
+      });
     } catch (error) {
       console.error('Error:', error);
       // TODO: Show error to user
     }
+  };
+
+  const handleRecipeClick = (recipe: Recipe) => {
+    navigate(`/recipe/${recipe.id}`, { state: { recipe } });
   };
 
   return (
@@ -135,14 +171,37 @@ const MealPlan = () => {
           
           <MealsContainer>
             {mealTypes.map((mealType) => (
-              <MealSlotBox key={mealType} elevation={1}>
+              <MealSlotBox 
+                key={mealType} 
+                elevation={1}
+                onClick={() => weekPlan[day]?.[mealType] && handleRecipeClick(weekPlan[day][mealType])}
+              >
                 <Typography variant="subtitle1" sx={{ textTransform: 'capitalize' }}>
                   {mealType}
                 </Typography>
                 {weekPlan[day]?.[mealType] ? (
                   <>
-                    <Typography variant="body1">
+                    {weekPlan[day][mealType].imageUrl && (
+                      <RecipeImage 
+                        src={weekPlan[day][mealType].imageUrl} 
+                        alt={weekPlan[day][mealType].title}
+                      />
+                    )}
+                    <Typography variant="body1" sx={{ pr: 9 }}>
                       {weekPlan[day][mealType].title}
+                    </Typography>
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary" 
+                      sx={{ 
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                        flex: 1
+                      }}
+                    >
+                      {weekPlan[day][mealType].description}
                     </Typography>
                     <MacrosBox>
                       <Typography variant="caption">

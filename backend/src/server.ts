@@ -8,6 +8,7 @@ import { processUrl } from './services/urlProcessor.ts';
 import process from 'node:process';
 import { generateMealPlan } from './services/planBuilder.ts';
 import { Recipe as RecipeType } from "../../shared/Recipe.ts";
+import { MealPlan } from './models/MealPlan.ts';
 
 const app = express();
 const upload = multer({ dest: 'uploads/' });
@@ -96,6 +97,46 @@ app.post('/api/mealplan/generate', (async (_req: Request, res: Response) => {
   } catch (error) {
     console.error('Error generating meal plan:', error);
     res.status(500).json({ error: 'Failed to generate meal plan' });
+  }
+}) as RequestHandler);
+
+app.post('/api/mealplan/save', (async (req: Request, res: Response) => {
+  try {
+    const { weekPlan } = req.body;
+    const startOfWeek = new Date();
+    startOfWeek.setHours(0, 0, 0, 0);
+    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay() + 8);
+
+    const mealPlan = new MealPlan({
+      weekPlan,
+      startDate: startOfWeek,
+      endDate: new Date(startOfWeek.getTime() + 6 * 24 * 60 * 60 * 1000)
+    });
+
+    await mealPlan.save();
+    res.json(mealPlan);
+  } catch (error) {
+    console.error('Error saving meal plan:', error);
+    res.status(500).json({ error: 'Failed to save meal plan' });
+  }
+}) as RequestHandler);
+
+app.get('/api/mealplan/current', (async (_req: Request, res: Response) => {
+  try {
+    // Figure out the Monday of the next week
+    const startOfWeek = new Date();
+    startOfWeek.setHours(0, 0, 0, 0);
+    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay() + 8);
+
+    const mealPlan = await MealPlan.findOne({
+      startDate: { $lte: startOfWeek },
+      endDate: { $gte: new Date(startOfWeek.getTime() + 6 * 24 * 60 * 60 * 1000) }
+    }).sort({ startDate: -1 });
+
+    res.json(mealPlan?.startDate.getTime() === startOfWeek.getTime() ? mealPlan?.weekPlan : {});
+  } catch (error) {
+    console.error('Error fetching meal plan:', error);
+    res.status(500).json({ error: 'Failed to fetch meal plan' });
   }
 }) as RequestHandler);
 
