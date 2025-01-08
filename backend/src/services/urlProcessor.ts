@@ -1,9 +1,10 @@
 import axios from 'axios';
 import Anthropic from '@anthropic-ai/sdk';
 import { Recipe, createEmptyRecipe } from '../../../shared/Recipe.ts';
+import process from 'node:process';
 
 const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY!,
+  apiKey: process.env.ANTHROPIC_API_KEY || ''
 });
 
 const model = "claude-3-5-sonnet-20241022";
@@ -11,25 +12,58 @@ const max_tokens = 1024;
 const temperature = 0;
 const systemPrompt = "You are a culinary analyst, who's goal is to transfer recipes from HTML content into a structured format for amateur chefs";
 
+
+// Logic to check for URLs in the html we have received
+const checkImageUrl = (url: string): boolean => {
+  return Boolean(url && 
+    !url.includes('logo') && 
+    !url.includes('icon') &&
+    url.includes('https') &&
+    (url.endsWith('.jpg') || url.endsWith('.jpeg') || url.endsWith('.png')));
+}
+
+// Logic to extract image URLs from the HTML we have received
+const extractImageUrls = (html: string): string[] => {
+  const imgRegex = /<img[^>]+src="([^">]+)"/g;
+  const urls: string[] = [];
+  let match;
+  
+  while ((match = imgRegex.exec(html)) !== null) {
+    const url = match[1];
+    if (checkImageUrl(url)) urls.push(url);
+  }
+  return urls;
+};
+
+// Logic to clean HTML we have recieved before passing it to Claude
+const cleanPageHTML = (html: string): string => {
+  return html
+  .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+  .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
+  .replace(/<[^>]*>/g, '\n') // Convert remaining HTML tags to newlines
+  .replace(/&nbsp;/g, ' ') // Convert non-breaking spaces
+  .replace(/&amp;/g, '&') // Convert HTML entities
+  .replace(/&lt;/g, '<')
+  .replace(/&gt;/g, '>')
+  .replace(/&quot;/g, '"')
+  .replace(/&#39;/g, "'")
+  .replace(/\s+/g, ' ') // Normalize whitespace
+  .trim();
+}
+
+// Process a URL and return a Recipe object
 export async function processUrl(url: string): Promise<Recipe> {
   try {
     // First fetch the HTML content
     const response = await axios.get(url);
     const rawHtml = response.data;
 
+    // Extract image URLs before cleaning HTML
+    const imageUrls = extractImageUrls(rawHtml);
+    const bestImageUrl = imageUrls.length > 0 ? imageUrls[0] : undefined;
+
     // Remove scripts, styles, and other non-content elements
-    const cleanHtml = rawHtml
-      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-      .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
-      .replace(/<[^>]*>/g, '\n') // Convert remaining HTML tags to newlines
-      .replace(/&nbsp;/g, ' ') // Convert non-breaking spaces
-      .replace(/&amp;/g, '&') // Convert HTML entities
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'")
-      .replace(/\s+/g, ' ') // Normalize whitespace
-      .trim();
+    const cleanHtml = cleanPageHTML(rawHtml)
 
     // Then ask Claude to parse the HTML
     const msg = await anthropic.messages.create({
@@ -59,7 +93,6 @@ export async function processUrl(url: string): Promise<Recipe> {
                 ingredients: string[],
                 instructions: string[],
                 cookTime?: string,
-                imageUrl?: string,
                 rating?: number,
                 numReviews?: number,
                 macros: {
@@ -77,7 +110,6 @@ export async function processUrl(url: string): Promise<Recipe> {
 
     // Rest of the code stays the same
     const parsedRecipe = msg.content[0].type === 'text' ? JSON.parse(msg.content[0].text) : createEmptyRecipe();
-    console.log('Claude response:', parsedRecipe);
     
     return {
       id: parsedRecipe.id || String(Date.now()),
@@ -92,7 +124,7 @@ export async function processUrl(url: string): Promise<Recipe> {
         fat: 0
       },
       cookTime: parsedRecipe.cookTime,
-      imageUrl: parsedRecipe.imageUrl,
+      imageUrl: bestImageUrl || 'https://placehold.co/600x400',
       recipeUrl: url,
       rating: parsedRecipe.rating,
       numReviews: parsedRecipe.numReviews,
@@ -102,5 +134,6 @@ export async function processUrl(url: string): Promise<Recipe> {
   } catch (error) {
     console.error('Error processing URL:', error);
     throw new Error('Failed to process recipe URL');
+    // TODO: Show user that there was an error
   }
 } 

@@ -897,7 +897,9 @@
     ],
     "packageJson": {
       "dependencies": [
+        "npm:@types/express@^4.17.21",
         "npm:@types/jsdom@^21.1.7",
+        "npm:axios@^1.7.9",
         "npm:jsdom@^25.0.1"
       ]
     }
