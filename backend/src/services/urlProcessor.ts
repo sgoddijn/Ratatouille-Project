@@ -45,6 +45,7 @@ export async function processUrl(url: string): Promise<Recipe> {
               "type": "text",
               "text": `Parse this HTML content and extract the recipe information into a JSON object. Return only the JSON object and nothing else.
               Note that macro information (calories, protein, carbs, fat) should be per serving.
+              The rating will usually be a number between 1 and 5, and the number of reviews will be associated with that rating. 
               Also note that sometimes the recipe is for multiple servings, but macro information is already done per serving, so be aware of that. 
               HTML content:
               
@@ -59,6 +60,8 @@ export async function processUrl(url: string): Promise<Recipe> {
                 instructions: string[],
                 cookTime?: string,
                 imageUrl?: string,
+                rating?: number,
+                numReviews?: number,
                 macros: {
                   calories: number,
                   protein: number,
@@ -90,6 +93,9 @@ export async function processUrl(url: string): Promise<Recipe> {
       },
       cookTime: parsedRecipe.cookTime,
       imageUrl: parsedRecipe.imageUrl,
+      recipeUrl: url,
+      rating: parsedRecipe.rating,
+      numReviews: parsedRecipe.numReviews,
       createdAt: new Date()
     };
 

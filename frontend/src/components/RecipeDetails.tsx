@@ -1,3 +1,4 @@
+import React from 'react';
 import { 
   Container, 
   Typography, 
@@ -52,7 +53,7 @@ const RecipeDetails = () => {
             Ingredients
           </Typography>
           <List>
-            {recipe.ingredients[0].map((ingredient: string, index: number) => (
+            {recipe.ingredients.map((ingredient: string, index: number) => (
               <ListItem 
                 key={index} 
                 sx={{ 
@@ -74,7 +75,7 @@ const RecipeDetails = () => {
             Instructions
           </Typography>
           <List>
-            {recipe.instructions[0].map((step: string, index: number) => (
+            {recipe.instructions.map((step: string, index: number) => (
               <ListItem key={index}>
                 <ListItemText 
                   primary={`Step ${index + 1}`} 

@@ -12,6 +12,9 @@ export interface Recipe {
       carbs: number;
       fat: number;
     };
+    rating: number;
+    recipeUrl: string;
+    numReviews: number;
     createdAt: Date;
   }
 
@@ -21,11 +24,16 @@ export interface Recipe {
     description: '',
     ingredients: [],
     instructions: [],
+    cookTime: '',
+    imageUrl: '',
     macros: {
       calories: 0,
       protein: 0,
       carbs: 0,
       fat: 0
     },
+    rating: 0,
+    recipeUrl: '',
+    numReviews: 0,
     createdAt: new Date()
   }); 
