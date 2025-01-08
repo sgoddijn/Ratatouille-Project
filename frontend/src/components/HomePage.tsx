@@ -1,4 +1,5 @@
 import { Box, Container, Typography, Button, Grid, Paper } from '@mui/material';
+import React from 'react';
 import { styled } from '@mui/material/styles';
 import RestaurantMenuIcon from '@mui/icons-material/RestaurantMenu';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
@@ -29,7 +30,7 @@ const HomePage = () => {
   };
 
   const handleMealPlan = () => {
-    navigate('/mealPlan');
+    navigate('/meal-plan');
   };
 
   return (

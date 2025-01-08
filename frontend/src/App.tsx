@@ -5,6 +5,7 @@ import HomePage from './components/HomePage.tsx';
 import RecipeManagement from './components/RecipeManagement.tsx';
 import MealPlan from './components/MealPlan.tsx';
 import RecipeDetails from './components/RecipeDetails.tsx';
+import Header from './components/Header.tsx';
 
 const theme = createTheme({
   palette: {
@@ -31,11 +32,13 @@ function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Router>
+        <Header />
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/recipeManagement" element={<RecipeManagement />} />
-          <Route path="/mealPlan" element={<MealPlan />} />
+          <Route path="/recipes" element={<RecipeManagement />} />
+          <Route path="/meal-plan" element={<MealPlan />} />
           <Route path="/recipe/:id" element={<RecipeDetails />} />
+          <Route path="/shopping-list" element={<div>Shopping List Coming Soon</div>} />
         </Routes>
       </Router>
     </ThemeProvider>
