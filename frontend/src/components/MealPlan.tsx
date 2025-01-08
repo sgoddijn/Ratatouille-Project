@@ -81,6 +81,7 @@ const MealsContainer = styled(Box)(({ theme }) => ({
 const MealTypesContainer = styled(Box)(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
+  width: '100%',
   gap: theme.spacing(2),
   marginTop: theme.spacing(2),
 }));
