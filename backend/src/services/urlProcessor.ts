@@ -30,7 +30,13 @@ const extractImageUrls = (html: string): string[] => {
   
   while ((match = imgRegex.exec(html)) !== null) {
     const url = match[1];
-    if (checkImageUrl(url)) urls.push(url);
+    
+    const pngRegex = /^(.*?\.png)/g;
+    const jpgRegex = /^(.*?\.jpg)/g;
+    const jpegRegex = /^(.*?\.jpeg)/g;
+
+    const urlToClean = pngRegex.exec(url)?.[0] || jpgRegex.exec(url)?.[0] || jpegRegex.exec(url)?.[0] || url;
+    if (checkImageUrl(urlToClean)) urls.push(urlToClean);
   }
   return urls;
 };
@@ -60,7 +66,10 @@ export async function processUrl(url: string): Promise<Recipe> {
 
     // Extract image URLs before cleaning HTML
     const imageUrls = extractImageUrls(rawHtml);
+
+    // TODO: Allow user to select the best image
     const bestImageUrl = imageUrls.length > 0 ? imageUrls[0] : undefined;
+
 
     // Remove scripts, styles, and other non-content elements
     const cleanHtml = cleanPageHTML(rawHtml)
