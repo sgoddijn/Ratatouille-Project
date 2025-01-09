@@ -19,8 +19,9 @@ export async function generateMealPlan(recipes: Recipe[]): Promise<Recipe[]> {
                 content: [
                   {
                     type: "text",
-                    text: `Create a meal plan for one day (breakfast, lunch, dinner) using these recipes. 
+                    text: `Create a meal plan for one week (breakfast, lunch, dinner) using these recipes. 
                     Consider what types of recipes make sense for each meal, for example a meal that makes sense for breakfast is not a salad.
+                    Try to avoid repeating recipes too often. 
                     Consider nutritional balance and variety. Return only a JSON object with the structure:
                     {
                       "monday": { "breakfast": recipeId, "lunch": recipeId, "dinner": recipeId },

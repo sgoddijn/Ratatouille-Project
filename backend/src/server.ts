@@ -131,7 +131,7 @@ app.get('/api/mealplan/current', (async (_req: Request, res: Response) => {
     const mealPlan = await MealPlan.findOne({
       startDate: { $lte: startOfWeek },
       endDate: { $gte: new Date(startOfWeek.getTime() + 6 * 24 * 60 * 60 * 1000) }
-    }).sort({ startDate: -1 });
+    }).sort({ createdAt: -1 });
 
     res.json(mealPlan?.startDate.getTime() === startOfWeek.getTime() ? mealPlan?.weekPlan : {});
   } catch (error) {
