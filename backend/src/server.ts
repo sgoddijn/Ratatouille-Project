@@ -61,24 +61,6 @@ app.delete('/api/recipes/:id', (async (req: Request, res: Response) => {
   }
 }) as RequestHandler);
 
-// Process recipe from PDF
-app.post('/api/recipes/pdf', upload.single('file'), (async (req: Request, res: Response) => {
-  try {
-    if (!req.file) {
-      res.status(400).json({ error: 'PDF file is required' });
-      return;
-    }
-
-    const recipeData = await processPdf(req.file.path);
-    const recipe = new Recipe(recipeData);
-    await recipe.save();
-    res.json(recipe);
-  } catch (error) {
-    console.error('Error processing PDF:', error);
-    res.status(500).json({ error: 'Failed to process recipe PDF' });
-  }
-}) as RequestHandler);
-
 // Create a meal plan from the existing recipes
 // TODO: Figure out how to grab a representative subset of recipes from BE 
 app.post('/api/mealplan/generate', (async (_req: Request, res: Response) => {
