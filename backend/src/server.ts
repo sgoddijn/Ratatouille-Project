@@ -40,7 +40,6 @@ app.post('/api/recipes/url', (async (req: Request, res: Response) => {
       res.status(400).json({ error: 'URL is required' });
       return;
     }
-
     const recipeData = await processUrl(url);
     const recipe = new Recipe(recipeData);
     await recipe.save();
@@ -48,6 +47,17 @@ app.post('/api/recipes/url', (async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error processing URL:', error);
     res.status(500).json({ error: 'Failed to process recipe URL' });
+  }
+}) as RequestHandler);
+
+// Delete a recipe
+app.delete('/api/recipes/:id', (async (req: Request, res: Response) => {
+  try {
+    await Recipe.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Recipe deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting recipe:', error);
+    res.status(500).json({ error: 'Failed to delete recipe' });
   }
 }) as RequestHandler);
 
@@ -100,6 +110,7 @@ app.post('/api/mealplan/generate', (async (_req: Request, res: Response) => {
   }
 }) as RequestHandler);
 
+// Save a meal plan to the database
 app.post('/api/mealplan/save', (async (req: Request, res: Response) => {
   try {
     const { weekPlan } = req.body;
@@ -121,6 +132,7 @@ app.post('/api/mealplan/save', (async (req: Request, res: Response) => {
   }
 }) as RequestHandler);
 
+// Get the current meal plan from the database
 app.get('/api/mealplan/current', (async (_req: Request, res: Response) => {
   try {
     // Figure out the Monday of the next week
@@ -139,7 +151,7 @@ app.get('/api/mealplan/current', (async (_req: Request, res: Response) => {
     res.status(500).json({ error: 'Failed to fetch meal plan' });
   }
 }) as RequestHandler);
-
+  
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

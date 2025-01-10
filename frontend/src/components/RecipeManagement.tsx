@@ -10,12 +10,14 @@ import {
   CardActions,
   Fab
 } from '@mui/material';
+import React from 'react';
 import AddIcon from '@mui/icons-material/Add';
 import { styled } from '@mui/material/styles';
 import { useState, useEffect } from 'react';
 import AddRecipeDialog from './AddRecipeDialog';
 import { Recipe } from '../../../shared/Recipe';
 import { useNavigate } from 'react-router-dom';
+import { ObjectId } from 'https://deno.land/x/mongo@v0.30.0/mod.ts';
 
 const StyledFab = styled(Fab)(({ theme }) => ({
   position: 'fixed',
@@ -96,8 +98,18 @@ const RecipeManagement = () => {
     console.log('Edit recipe', id);
   };
 
-  const handleDeleteRecipe = (id: number) => {
-    console.log('Delete recipe', id);
+  const handleDeleteRecipe = async (id: ObjectId, event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    const response = await fetch(`http://localhost:3000/api/recipes/${id}`, {
+      method: 'DELETE',
+    });
+
+    console.log(response);
+    if (!response?.ok) {
+      throw new Error('Failed to delete recipe');
+    }
+
+    fetchRecipes();
   };
 
   const handleRecipeClick = (recipe: Recipe) => {
@@ -143,7 +155,7 @@ const RecipeManagement = () => {
                   <Button size="small" onClick={() => handleEditRecipe(recipe.id)}>
                     Edit
                   </Button>
-                  <Button size="small" color="error" onClick={() => handleDeleteRecipe(recipe.id)}>
+                  <Button size="small" color="error" onClick={(event) => handleDeleteRecipe(recipe._id, event)}>
                     Delete
                   </Button>
                 </CardActions>
