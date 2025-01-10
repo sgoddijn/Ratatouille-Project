@@ -6,6 +6,7 @@ import RecipeManagement from './components/RecipeManagement.tsx';
 import MealPlan from './components/MealPlan.tsx';
 import RecipeDetails from './components/RecipeDetails.tsx';
 import Header from './components/Header.tsx';
+import ShoppingList from './components/ShoppingList.tsx';
 
 const theme = createTheme({
   palette: {
@@ -38,7 +39,7 @@ function App() {
           <Route path="/recipes" element={<RecipeManagement />} />
           <Route path="/meal-plan" element={<MealPlan />} />
           <Route path="/recipe/:id" element={<RecipeDetails />} />
-          <Route path="/shopping-list" element={<div>Shopping List Coming Soon</div>} />
+          <Route path="/shopping-list" element={<ShoppingList />} />
         </Routes>
       </Router>
     </ThemeProvider>

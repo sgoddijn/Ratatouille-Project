@@ -1,6 +1,5 @@
 import express from 'express';
 import cors from 'cors';
-import multer from 'multer';
 import { Request, Response, RequestHandler } from 'express';
 import { connectDB } from './config/database.ts';
 import { Recipe } from './models/Recipe.ts';
@@ -9,9 +8,9 @@ import process from 'node:process';
 import { generateMealPlan } from './services/planBuilder.ts';
 import { Recipe as RecipeType } from "../../shared/Recipe.ts";
 import { MealPlan } from './models/MealPlan.ts';
+import { cleanIngredients } from './services/ingredientCleaner.ts';
 
 const app = express();
-const upload = multer({ dest: 'uploads/' });
 
 // Connect to MongoDB
 connectDB();
@@ -133,7 +132,18 @@ app.get('/api/mealplan/current', (async (_req: Request, res: Response) => {
     res.status(500).json({ error: 'Failed to fetch meal plan' });
   }
 }) as RequestHandler);
-  
+
+app.post('/api/ingredients/clean', (async (req: Request, res: Response) => {
+  try {
+    const { ingredients } = req.body;
+    const cleanedIngredients = await cleanIngredients(ingredients);
+    res.json(cleanedIngredients);
+  } catch (error) {
+    console.error('Error cleaning ingredients:', error);
+    res.status(500).json({ error: 'Failed to clean ingredients' });
+  }
+}) as RequestHandler);
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
