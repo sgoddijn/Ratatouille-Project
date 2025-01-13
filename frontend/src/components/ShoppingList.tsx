@@ -1,8 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Container, Typography, List, ListItem, ListItemText } from '@mui/material';
 
+interface IngredientMap {
+  [key: string]: string;
+}
+
 const ShoppingList = () => {
-  const [ingredients, setIngredients] = useState<string[]>([]);
+  const [ingredients, setIngredients] = useState<IngredientMap>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -31,8 +35,7 @@ const ShoppingList = () => {
         });
         
         if (!cleanResponse.ok) throw new Error('Failed to clean ingredients');
-        const cleanedIngredients = await cleanResponse.json();
-        setIngredients(cleanedIngredients);
+        setIngredients(await cleanResponse.json());
 
       } catch (error) {
         console.error('Error:', error);
@@ -53,10 +56,13 @@ const ShoppingList = () => {
         <Typography>Loading ingredients...</Typography>
       ) : (
         <List>
-          {ingredients.length > 0 ? (
-            ingredients.map((ingredient, index) => (
+          {Object.entries(ingredients).length > 0 ? (
+            Object.entries(ingredients).map(([ingredient, amount], index) => (
               <ListItem key={index}>
-                <ListItemText primary={ingredient} />
+                <ListItemText 
+                  primary={ingredient}
+                  secondary={amount}
+                />
               </ListItem>
             ))
           ) : (
