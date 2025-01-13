@@ -82,6 +82,5 @@ export const getConversionString = (): string => {
         
         conversionString += '\n';
     }
-    console.log(conversionString);
     return conversionString;
 }; 

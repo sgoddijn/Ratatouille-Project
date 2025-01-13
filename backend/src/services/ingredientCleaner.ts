@@ -21,7 +21,8 @@ async function consolidateIngredients(ingredients: string[]): Promise<Record<str
                 type: "text",
                 text: `Consolidate these ingredients into groups. Create a key for each base ingredient and map it to an array of amounts.
                 Remove preparation instructions (diced, chopped, etc).
-                Some ingredients may seem similar but are not the same, for example caster sugar and brown sugar, or chicken thigh and chicken breast.
+                Please consider chicken breast, thighs, and chopped or diced chicken to be different.
+                Please consider different types of flour and sugar (e.g. almond, corn, brown, caster, etc.)
                 Return only a valid JSON object where keys are ingredient names and values are arrays of amounts.
 
                 Example Input: ['2 cups cooked chicken', '640g boneless and skinless thighs', '500g chicken breast', '2 skinless breast fillets', '2 boneless, skinless breasts']
@@ -49,6 +50,7 @@ async function standardizeAmounts(consolidatedIngredients: Record<string, string
                 text: `Take these consolidated ingredients and standardize their amounts.
                 For each key in the input JSON, consolidate the amounts and convert to consistent units.
                 Return a JSON object where keys are ingredient names and values are amounts in consistent units.
+                Validate that the number of keys returned is the same as the number of keys in the input JSON.
                 Do not return any other text.
 
                 Here are some useful conversions to know: ${getConversionString()}
@@ -65,6 +67,8 @@ async function standardizeAmounts(consolidatedIngredients: Record<string, string
 }
 
 export async function cleanIngredients(ingredients: string[]): Promise<string[]> {
+    // await fs.promises.writeFile('ingredients.txt', JSON.stringify(ingredients, null, 2));
+
     const consolidated = await consolidateIngredients(ingredients);
     // await fs.promises.writeFile('consolidated.txt', JSON.stringify(consolidated, null, 2));
     
