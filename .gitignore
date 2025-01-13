@@ -1,0 +1,49 @@
+# Project specific
+backend/anthropicResponse.txt
+backend/package.json
+shared/package.json
+
+# Node.js
+node_modules/
+package-lock.json
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+*.tsbuildinfo
+
+# Operating System
+.DS_Store
+Thumbs.db
+*.swp
+._*
+
+# IDEs and editors
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+.project
+.settings/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Build and temp directories
+dist/
+build/
+tmp/
+temp/
+coverage/
+*.log
+logs/
+.cache/
+
+# Environment and secrets
+.env
+.env.local
+.env.*
+*.pem
+.secret*
+
