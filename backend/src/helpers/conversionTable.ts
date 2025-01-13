@@ -1,37 +1,86 @@
 export const conversionTable = {
-    dryMeasurementRatios: {
-        oz: 1, 
-        tbsp: 2, 
-        cup: 1/8, 
-        grams: 28, 
-        pounds: 0.0617,
+    "milk": {
+        "cup": "240 ml",
+        "tablespoon": "15 ml",
+        "teaspoon": "5 ml"
     },
-    liquidMeasurementRatios: {
-        oz: 1, 
-        tsp: 6,
-        tbsp: 2,
-        ml: 30, 
-        cup: 1/8,
+    "water": {
+        "cup": "240 ml",
+        "tablespoon": "15 ml",
+        "teaspoon": "5 ml"
     },
-    chicken: {
-        thigh: "113g", // g
-        breast: "226g", // g
-        cup: "140g", // g
-    }
+    "oil": {
+        "cup": "240 ml",
+        "tablespoon": "15 ml",
+        "teaspoon": "5 ml"
+    },
+    "honey": {
+        "cup": "240 ml",
+        "tablespoon": "15 ml",
+        "teaspoon": "5 ml"
+    },
+    "vinegar": {
+        "cup": "240 ml",
+        "tablespoon": "15 ml",
+        "teaspoon": "5 ml"
+    },
+    "flour": {
+        "cup": "120 g",
+        "tablespoon": "8 g",
+        "teaspoon": "2.7 g"
+    },
+    "sugar": {
+        "cup": "200 g",
+        "tablespoon": "12.5 g",
+        "teaspoon": "4.2 g"
+    },
+    "brown_sugar": {
+        "cup": "220 g",
+        "tablespoon": "13.75 g",
+        "teaspoon": "4.6 g"
+    },
+    "rice": {
+        "cup": "200 g",
+        "tablespoon": "12.5 g",
+        "teaspoon": "4.2 g"
+    },
+    "baking_powder": {
+        "cup": "192 g",
+        "tablespoon": "12 g",
+        "teaspoon": "4 g"
+    },
+    "salt": {
+        "cup": "288 g",
+        "tablespoon": "18 g",
+        "teaspoon": "6 g"
+    },
+    "chicken": {
+        "breast": "200 g",
+        "thigh": "150 g"
+    },
+    "strawberries": {
+        "cup": "150 g",
+        "tablespoon": "9.4 g"
+    },
+    "blueberries": {
+        "cup": "190 g",
+        "tablespoon": "12 g"
+    },
 };
+  
 
 export const getConversionString = (): string => {
     let conversionString = "";
     for (const [category, measurements] of Object.entries(conversionTable)) {
         conversionString += `${category}: `;
-        for (const [unit, ratio] of Object.entries(measurements)) {
-            if (category === "chicken") {
-                conversionString += `${unit} = ${ratio}, `;
-            } else {
-                conversionString += `${ratio} ${unit} = `;
-            }
-        }
-        conversionString += `\n`;
+        const entries = Object.entries(measurements);
+        
+        entries.forEach(([ unit, ratio ], index) => {
+            conversionString += `${unit} = ${ratio}`;
+            conversionString += index === entries.length - 1 ? '. ' : ', ';
+        });
+        
+        conversionString += '\n';
     }
     console.log(conversionString);
     return conversionString;
