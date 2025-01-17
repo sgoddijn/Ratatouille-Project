@@ -47,3 +47,6 @@ logs/
 *.pem
 .secret*
 
+
+# python
+*.pyc

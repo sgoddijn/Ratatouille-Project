@@ -1,0 +1,32 @@
+[tool.poetry]
+name = "ratatouille"
+version = "0.1.0"
+description = "A set of tools that allow us to build meal plans"
+authors = ["jose"]
+readme = "README.md"
+packages = [
+    {include="ratatouille", from="."}
+]
+
+[[tool.poetry.source]]
+name = "pypi-public"
+url = "https://pypi.org/simple/"
+priority = "primary"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.115.6"
+langchain-core = "^0.3.29"
+langchain-mongodb = "^0.4.0"
+pymongo = "^4.10.1"
+langchain-anthropic = "^0.3.1"
+datasets = "^3.2.0"
+langchain-openai = "^0.3.0"
+
+[tool.poetry.group.dev.dependencies]
+jupyter = "^1.1.1"
+ipykernel = "^6.29.5"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
