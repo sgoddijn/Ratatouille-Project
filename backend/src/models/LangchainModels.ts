@@ -6,15 +6,14 @@ export const LangchainRecipe = z.object({
   description: z.string(),
   ingredients: z.array(z.string()),
   instructions: z.array(z.string()),
-  cookTime: z.string().optional(),
-  rating: z.number().default(0),
-  numReviews: z.number().default(0),
+  cookTime: z.string(),
+  rating: z.number(),
+  numReviews: z.number(),
   recipeUrl: z.string(),
-  createdAt: z.date(),
   macros: z.object({
-    calories: z.number().default(0),
-    protein: z.number().default(0),
-    carbs: z.number().default(0),
-    fat: z.number().default(0)
+    calories: z.number(),
+    protein: z.number(),
+    carbs: z.number(),
+    fat: z.number()
   })
 });

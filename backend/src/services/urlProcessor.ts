@@ -1,9 +1,8 @@
 import axios from 'axios';
-import { Recipe, createEmptyRecipe } from '../../../shared/Recipe.ts';
+import { Recipe } from '../../../shared/Recipe.ts';
 import { LangchainRecipe } from '../models/LangchainModels.ts';
 import { ChatAnthropic } from "npm:@langchain/anthropic";
 import { PromptTemplate } from "npm:@langchain/core/prompts";
-import { StructuredOutputParser } from "npm:@langchain/core/output_parsers";
 
 
 // Create LangChain model
@@ -12,9 +11,9 @@ const model = new ChatAnthropic({
   maxTokens: 1024,
   temperature: 0,
   anthropicApiKey: Deno.env.get('ANTHROPIC_API_KEY')
+}).withStructuredOutput(LangchainRecipe, {
+  method: "function_calling"
 });
-
-const parser = StructuredOutputParser.fromZodSchema(LangchainRecipe);
 
 // Define prompt
 const anthropicPrompt = new PromptTemplate({
@@ -26,8 +25,8 @@ const anthropicPrompt = new PromptTemplate({
     Task: We want to extract the recipe information from the HTML content and return it in a structured format.
           Note that macro information (calories, protein, carbs, fat) should be per serving even if the recipe is not for multiple servings.
           The rating will usually be a number between 1 and 5, and the number of reviews will be associated with that rating.
-          Return in the following format: {format_instructions}`,
-  inputVariables: ["cleanHtml", "format_instructions"]
+  `,
+  inputVariables: ["cleanHtml"]
 });
 
 // Logic to check for URLs in the html we have received
@@ -90,23 +89,25 @@ export async function processUrl(url: string): Promise<Recipe> {
     // Remove scripts, styles, and other non-content elements
     const cleanHtml = cleanPageHTML(rawHtml)
 
-    // 
-    const formattedPrompt = await anthropicPrompt.format({ 
-      cleanHtml, 
-      format_instructions: parser.getFormatInstructions() 
-    });
-    
+    // TODO: Parallel image agent
+    // TODO: Sequential ingredient agent
+    // TODO: Sequential instruction agent
 
-    const modelResponse = await model.invoke(formattedPrompt);
-    const result: Recipe = await parser.parse(modelResponse.content);
+
+    // Define the chain
+    const chain = anthropicPrompt.pipe(model);
+
+    // Run the chain
+    const result = await chain.invoke({cleanHtml});
     console.log(result);
+
+    // Return the result
     return {
       ...result,
       imageUrl: bestImageUrl,
       recipeUrl: url,
       createdAt: new Date()
     };
-
   } catch (error) {
     console.error('Error processing URL:', error);
     throw new Error('Failed to process recipe URL');
