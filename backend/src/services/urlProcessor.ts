@@ -1,17 +1,34 @@
 import axios from 'axios';
-import Anthropic from '@anthropic-ai/sdk';
 import { Recipe, createEmptyRecipe } from '../../../shared/Recipe.ts';
-import process from 'node:process';
+import { LangchainRecipe } from '../models/LangchainModels.ts';
+import { ChatAnthropic } from "npm:@langchain/anthropic";
+import { PromptTemplate } from "npm:@langchain/core/prompts";
+import { StructuredOutputParser } from "npm:@langchain/core/output_parsers";
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY || ''
+
+// Create LangChain model
+const model = new ChatAnthropic({
+  modelName: "claude-3-5-sonnet-20241022",
+  maxTokens: 1024,
+  temperature: 0,
+  anthropicApiKey: Deno.env.get('ANTHROPIC_API_KEY')
 });
 
-const model = "claude-3-5-sonnet-20241022";
-const max_tokens = 1024;
-const temperature = 0;
-const systemPrompt = "You are a culinary analyst, who's goal is to transfer recipes from HTML content into a structured format for amateur chefs";
+const parser = StructuredOutputParser.fromZodSchema(LangchainRecipe);
 
+// Define prompt
+const anthropicPrompt = new PromptTemplate({
+  template: `
+    You are a culinary analyst, who's goal is to transfer recipes from HTML content into a structured format for amateur chefs
+
+    Context: {cleanHtml}
+
+    Task: We want to extract the recipe information from the HTML content and return it in a structured format.
+          Note that macro information (calories, protein, carbs, fat) should be per serving even if the recipe is not for multiple servings.
+          The rating will usually be a number between 1 and 5, and the number of reviews will be associated with that rating.
+          Return in the following format: {format_instructions}`,
+  inputVariables: ["cleanHtml", "format_instructions"]
+});
 
 // Logic to check for URLs in the html we have received
 const checkImageUrl = (url: string): boolean => {
@@ -68,75 +85,25 @@ export async function processUrl(url: string): Promise<Recipe> {
     const imageUrls = extractImageUrls(rawHtml);
 
     // TODO: Allow user to select the best image
-    const bestImageUrl = imageUrls.length > 0 ? imageUrls[0] : undefined;
-
+    const bestImageUrl = imageUrls.length > 0 ? imageUrls[0] : 'https://placehold.co/600x400';
 
     // Remove scripts, styles, and other non-content elements
     const cleanHtml = cleanPageHTML(rawHtml)
 
-    // Then ask Claude to parse the HTML
-    const msg = await anthropic.messages.create({
-      model: model,
-      max_tokens: max_tokens,
-      temperature: temperature,
-      system: systemPrompt,
-      messages: [
-        {
-          "role": "user",
-          "content": [
-            {
-              "type": "text",
-              "text": `Parse this HTML content and extract the recipe information into a JSON object. Return only the JSON object and nothing else.
-              Note that macro information (calories, protein, carbs, fat) should be per serving.
-              The rating will usually be a number between 1 and 5, and the number of reviews will be associated with that rating. 
-              Also note that sometimes the recipe is for multiple servings, but macro information is already done per serving, so be aware of that. 
-              HTML content:
-              
-              ${cleanHtml}
-              
-              Required JSON format:
-              {
-                id: string,
-                title: string,
-                description: string,
-                ingredients: string[],
-                instructions: string[],
-                cookTime?: string,
-                rating?: number,
-                numReviews?: number,
-                macros: {
-                  calories: number,
-                  protein: number,
-                  carbs: number,
-                  fat: number
-                }
-              }`
-            }
-          ]
-        }
-      ]
+    // 
+    const formattedPrompt = await anthropicPrompt.format({ 
+      cleanHtml, 
+      format_instructions: parser.getFormatInstructions() 
     });
-
-    // Rest of the code stays the same
-    const parsedRecipe = msg.content[0].type === 'text' ? JSON.parse(msg.content[0].text) : createEmptyRecipe();
     
+
+    const modelResponse = await model.invoke(formattedPrompt);
+    const result: Recipe = await parser.parse(modelResponse.content);
+    console.log(result);
     return {
-      id: parsedRecipe.id || String(Date.now()),
-      title: parsedRecipe.title || 'Untitled Recipe',
-      description: parsedRecipe.description || '',
-      ingredients: Array.isArray(parsedRecipe.ingredients) ? parsedRecipe.ingredients : [],
-      instructions: Array.isArray(parsedRecipe.instructions) ? parsedRecipe.instructions : [],
-      macros: parsedRecipe.macros || {
-        calories: 0,
-        protein: 0,
-        carbs: 0,
-        fat: 0
-      },
-      cookTime: parsedRecipe.cookTime,
-      imageUrl: bestImageUrl || 'https://placehold.co/600x400',
+      ...result,
+      imageUrl: bestImageUrl,
       recipeUrl: url,
-      rating: parsedRecipe.rating,
-      numReviews: parsedRecipe.numReviews,
       createdAt: new Date()
     };
 

@@ -2,9 +2,15 @@
   "tasks": {
     "dev": "deno run -A --watch src/server.ts"
   },
+  "nodeModulesDir": "auto",
   "imports": {
     "@anthropic-ai/sdk": "npm:@anthropic-ai/sdk@^0.33.1",
-    "@std/assert": "jsr:@std/assert@1",
+    "@langchain/anthropic": "npm:@langchain/anthropic",
+    "@langchain/core/prompts": "npm:@langchain/core/prompts",
+    "@langchain/core/output_parsers": "npm:@langchain/core/output_parsers",
+    "@langchain/core/runnables": "npm:@langchain/core/runnables",
+    "zod": "npm:zod",
+    "@std/assert": "jsr:@std/assert@^1.0.10",
     "axios": "npm:axios@^1.7.9",
     "cors": "npm:cors@^2.8.5",
     "dotenv": "npm:dotenv@^16.4.7",
@@ -13,3 +19,4 @@
     "multer": "npm:multer@^1.4.5-lts.1"
   }
 }
+  
