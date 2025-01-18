@@ -7,11 +7,17 @@ const macrosSchema = new mongoose.Schema({
   fat: { type: Number, required: true },
 });
 
+const ingredientSchema = new mongoose.Schema({
+  ingredientName: { type: String, required: true },
+  quantity: { type: String, required: true },
+  conversions: { type: [String], required: true },
+});
+
 const recipeSchema = new mongoose.Schema({
   id: { type: String, required: true },
   title: { type: String, required: true },
   description: { type: String, required: true },
-  ingredients: { type: [String], required: true },
+  ingredients: { type: [ingredientSchema], required: true },
   instructions: { type: [String], required: true },
   rating: Number,
   cookTime: String,

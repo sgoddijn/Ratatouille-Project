@@ -17,3 +17,16 @@ export const LangchainRecipe = z.object({
     fat: z.number()
   })
 });
+
+export const LangchainImage = z.object({
+  imageUrl: z.string()
+});
+
+export const LangchainIngredients = z.object({
+  ingredients: z.array(z.object({
+    ingredientName: z.string(),
+    quantity: z.string(),
+    conversions: z.array(z.string())
+  }))
+});
+

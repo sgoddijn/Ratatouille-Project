@@ -1,9 +1,11 @@
 import axios from 'axios';
 import { Recipe } from '../../../shared/Recipe.ts';
-import { LangchainRecipe } from '../models/LangchainModels.ts';
+import { LangchainRecipe, LangchainImage, LangchainIngredients } from '../models/LangchainModels.ts';
 import { ChatAnthropic } from "npm:@langchain/anthropic";
 import { PromptTemplate } from "npm:@langchain/core/prompts";
-
+import { RunnableMap, RunnableSequence } from "npm:@langchain/core/runnables";
+import { z } from 'zod';
+import { conversionTable } from '../helpers/conversionTable.ts';
 
 // Create LangChain model
 const model = new ChatAnthropic({
@@ -15,8 +17,26 @@ const model = new ChatAnthropic({
   method: "function_calling"
 });
 
-// Define prompt
-const anthropicPrompt = new PromptTemplate({
+const imageModel = new ChatAnthropic({
+  modelName: "claude-3-5-sonnet-20241022",
+  maxTokens: 1024,
+  temperature: 0,
+  anthropicApiKey: Deno.env.get('ANTHROPIC_API_KEY')
+}).withStructuredOutput(LangchainImage, {
+  method: "function_calling"
+});
+
+const ingredientModel = new ChatAnthropic({
+  modelName: "claude-3-5-sonnet-20241022",
+  maxTokens: 1024,
+  temperature: 0,
+  anthropicApiKey: Deno.env.get('ANTHROPIC_API_KEY')
+}).withStructuredOutput(LangchainIngredients, {
+  method: "function_calling"
+});
+
+// Prompt to get a recipe object from HTML
+const recipePrompt = new PromptTemplate({
   template: `
     You are a culinary analyst, who's goal is to transfer recipes from HTML content into a structured format for amateur chefs
 
@@ -26,7 +46,39 @@ const anthropicPrompt = new PromptTemplate({
           Note that macro information (calories, protein, carbs, fat) should be per serving even if the recipe is not for multiple servings.
           The rating will usually be a number between 1 and 5, and the number of reviews will be associated with that rating.
   `,
-  inputVariables: ["cleanHtml"]
+  inputVariables: ["cleanHtml", "imageUrls"]
+});
+
+// Prompt to get the best image from the HTML content
+const imagePrompt = new PromptTemplate({
+  template: `
+    You are a culinary analyst, who's goal is to extract the best image from the HTML content for the recipe in question. 
+
+    Context: {imageUrls}
+
+    Task: We want to extract the best image from the HTML content and return the URL.
+  `,
+  inputVariables: ["imageUrls"]
+});
+
+// Prompt to get the ingredients normalized from the initial list
+const ingredientPrompt = new PromptTemplate({
+  template: `
+    You are an cooking ingredient and measurement specialist, who's job is to normalize ingredients and measurements.
+    For each ingredient map it to a base ingredient and a measurement, for example chicken breast, or flour. 
+    Then for each measurement, create a list of converted measurements, like grams, ounces, pounds, etc.
+
+    Context: {ingredientList}
+    Conversion Table: {conversionTable}
+
+    Example Input: ['2 skinless chicken breasts', '1 cup flour', '1/2 cup sugar']
+    Example Output: [{{ "ingredientName": "chicken breast", quantity": "2", "conversions": ["2 whole", "400g"] }},
+                     {{ "ingredientName": "flour", "quantity": "120g", "conversions": ["1 cup", "120g"] }},
+                     {{ "ingredientName": "sugar", "quantity": "100g", "conversions": ["1/2 cup", "100g"] }}
+                    ]
+
+  `,
+  inputVariables: ["ingredientList", "conversionTable"]
 });
 
 // Logic to check for URLs in the html we have received
@@ -83,28 +135,43 @@ export async function processUrl(url: string): Promise<Recipe> {
     // Extract image URLs before cleaning HTML
     const imageUrls = extractImageUrls(rawHtml);
 
-    // TODO: Allow user to select the best image
-    const bestImageUrl = imageUrls.length > 0 ? imageUrls[0] : 'https://placehold.co/600x400';
-
     // Remove scripts, styles, and other non-content elements
     const cleanHtml = cleanPageHTML(rawHtml)
 
-    // TODO: Parallel image agent
-    // TODO: Sequential ingredient agent
-    // TODO: Sequential instruction agent
+    // Do the recipe and image in parallel
+    const parallelChain = RunnableMap.from([
+      {
+        recipe: recipePrompt.pipe(model),
+        image: imagePrompt.pipe(imageModel)
+      }
+    ]);
 
-
-    // Define the chain
-    const chain = anthropicPrompt.pipe(model);
+    // Do the ingredients once we have the results from the recipe model
+    const sequentialChain = RunnableSequence.from([
+      parallelChain,
+      (result: [{recipe: z.infer<typeof LangchainRecipe>, image: z.infer<typeof LangchainImage>}]) => {
+        console.log(result);
+        return {recipe: result[0].recipe, image: result[0].image,};
+      }, 
+      async (result: {recipe: z.infer<typeof LangchainRecipe>, image: z.infer<typeof LangchainImage>}) => {
+        const ingredientList = result.recipe.ingredients;
+        const ingredients = await ingredientPrompt.pipe(ingredientModel).invoke({ingredientList, conversionTable});
+        return {recipe: result.recipe, image: result.image, ingredients};
+      }
+    ]);
 
     // Run the chain
-    const result = await chain.invoke({cleanHtml});
-    console.log(result);
+    const result = await sequentialChain.invoke({cleanHtml, imageUrls});
+
+    const recipe = result.recipe;
+    const imageUrl = result.image.imageUrl;
+    const ingredients = result.ingredients.ingredients;
 
     // Return the result
     return {
-      ...result,
-      imageUrl: bestImageUrl,
+      ...recipe,
+      ingredients,
+      imageUrl,
       recipeUrl: url,
       createdAt: new Date()
     };
