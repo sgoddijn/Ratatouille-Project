@@ -39,7 +39,11 @@ async function consolidateIngredients(ingredients: string[]): Promise<Record<str
     return msg.content[0].type === 'text' ? JSON.parse(msg.content[0].text) : {};
 }
 
-async function standardizeAmounts(consolidatedIngredients: Record<string, string[]>): Promise<string[]> {
+async function standardizeAmounts(ingredients: Array<{
+  ingredientName: string;
+  quantity: string;
+  conversions: string[];
+}>): Promise<{ ingredients: string[] }> {
     const msg = await anthropic.messages.create({
         model, max_tokens, temperature,
         system: "You are a grocery shopper standardizing ingredient amounts",
@@ -47,18 +51,12 @@ async function standardizeAmounts(consolidatedIngredients: Record<string, string
             role: "user",
             content: [{
                 type: "text",
-                text: `Take these consolidated ingredients and standardize their amounts.
-                For each key in the input JSON, consolidate the amounts and convert to consistent units.
-                Return a JSON object where keys are ingredient names and values are amounts in consistent units.
-                Validate that the number of keys returned is the same as the number of keys in the input JSON.
+                text: `Take these ingredients and combine them so that they can be used in a shopping list.
+                Return an array of ingredients with standardized amounts.
                 Do not return any other text.
 
                 Here are some useful conversions to know: ${getConversionString()}
-                Input: ${JSON.stringify(consolidatedIngredients)}
-
-
-                Example Input: { "chicken": ["2 cups"], "chicken breast": ["500g", "2", "2"], "chicken thigh": "640g"] }
-                Expected Output: {"chicken": "280g", "chicken breast": "1404g", "chicken thigh": "640g"}`
+                Input: ${JSON.stringify(ingredients)}`
             }]
         }]
     });
@@ -66,13 +64,13 @@ async function standardizeAmounts(consolidatedIngredients: Record<string, string
     return msg.content[0].type === 'text' ? JSON.parse(msg.content[0].text) : [];
 }
 
-export async function cleanIngredients(ingredients: string[]): Promise<string[]> {
+export async function cleanIngredients(ingredients: { ingredientName: string, quantity: string, conversions: string[] }[]): Promise<{ ingredients: string[] }> {
     // await fs.promises.writeFile('ingredients.txt', JSON.stringify(ingredients, null, 2));
 
-    const consolidated = await consolidateIngredients(ingredients);
+    // const consolidated = await consolidateIngredients(ingredients);
     // await fs.promises.writeFile('consolidated.txt', JSON.stringify(consolidated, null, 2));
     
-    const standardized =  await standardizeAmounts(consolidated);
+    const standardized =  await standardizeAmounts(ingredients);
     // await fs.promises.writeFile('standardized.txt', JSON.stringify(standardized, null, 2));
     
     return standardized;

@@ -1,12 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { Container, Typography, List, ListItem, ListItemText } from '@mui/material';
 
-interface IngredientMap {
-  [key: string]: string;
+interface Ingredient {
+  ingredientName: string;
+  quantity: string;
+  conversions: string[];
 }
 
+
+
 const ShoppingList = () => {
-  const [ingredients, setIngredients] = useState<IngredientMap>({});
+  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -22,7 +26,7 @@ const ShoppingList = () => {
           for (const mealType in mealPlan[day]) {
             const recipe = mealPlan[day][mealType];
             if (recipe && recipe.ingredients) {
-              recipe.ingredients.forEach((ingredient: string) => ingredientArray.push(ingredient));
+              recipe.ingredients.forEach((ingredient: Ingredient) => ingredientArray.push(ingredient));
             }
           }
         }
