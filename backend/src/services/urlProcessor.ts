@@ -162,7 +162,6 @@ export async function processUrl(url: string): Promise<Recipe> {
 
     // Run the chain
     const result = await sequentialChain.invoke({cleanHtml, imageUrls});
-
     const recipe = result.recipe;
     const imageUrl = result.image.imageUrl;
     const ingredients = result.ingredients.ingredients;

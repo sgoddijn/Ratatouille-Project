@@ -26,7 +26,13 @@ export interface Recipe {
     id: '',
     title: '',
     description: '',
-    ingredients: [],
+    ingredients: [
+      {
+        ingredientName: '',
+        quantity: '',
+        conversions: []
+      }
+    ],
     instructions: [],
     cookTime: '',
     imageUrl: '',

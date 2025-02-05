@@ -113,6 +113,7 @@ const RecipeManagement = () => {
   };
 
   const handleRecipeClick = (recipe: Recipe) => {
+    console.log('Recipe clicked', recipe);
     navigate(`/recipe/${recipe.id}`, { state: { recipe } });
   };
 
@@ -137,7 +138,7 @@ const RecipeManagement = () => {
                 <CardMedia
                   component="img"
                   height="200"
-                  image={recipe.imageUrl}
+                  image={recipe.imageUrl || 'https://placehold.co/600x400'}
                   alt={recipe.title}
                 />
                 <CardContent>
@@ -148,7 +149,7 @@ const RecipeManagement = () => {
                     {recipe.description}
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                    Cook Time: {recipe.cookTime}
+                    Cook Time: {recipe.cookTime || 'Not specified'}
                   </Typography>
                 </CardContent>
                 <CardActions>

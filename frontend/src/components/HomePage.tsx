@@ -26,7 +26,7 @@ const FeatureCard = styled(Paper)(({ theme }) => ({
 const HomePage = () => {
   const navigate = useNavigate();
   const handleRecipes = () => {
-    navigate('/recipeManagement');
+    navigate('/recipes');
   };
 
   const handleMealPlan = () => {

@@ -53,7 +53,7 @@ const RecipeDetails = () => {
             Ingredients
           </Typography>
           <List>
-            {recipe.ingredients.map((ingredient: string, index: number) => (
+            {recipe.ingredients.map((ingredient: { ingredientName: string, quantity: string, conversions: string[] }, index: number) => (
               <ListItem 
                 key={index} 
                 sx={{ 
@@ -64,7 +64,7 @@ const RecipeDetails = () => {
                   pl: 1
                 }}
               >
-                <ListItemText primary={ingredient} />
+                <ListItemText primary={ingredient.ingredientName} />
               </ListItem>
             ))}
           </List>
