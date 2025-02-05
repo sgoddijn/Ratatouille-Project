@@ -1,4 +1,5 @@
 import React from 'react';
+import { Ingredient, IngredientImpl } from '../../../shared/Ingredient.ts';
 import { 
   Container, 
   Typography, 
@@ -18,6 +19,14 @@ import { Recipe } from '../../../shared/Recipe';
 const RecipeDetails = () => {
   const location = useLocation();
   const recipe: Recipe = location.state?.recipe;
+
+  const formatIngredient = (ingredient: Ingredient): string => {
+    return new IngredientImpl(
+      ingredient.ingredientName,
+      ingredient.quantity,
+      ingredient.conversions
+    ).toString();
+  };
 
   if (!recipe) return <Typography>Recipe not found</Typography>;
 
@@ -53,7 +62,7 @@ const RecipeDetails = () => {
             Ingredients
           </Typography>
           <List>
-            {recipe.ingredients.map((ingredient: { ingredientName: string, quantity: string, conversions: string[] }, index: number) => (
+            {recipe.ingredients.map((ingredient: Ingredient, index: number) => (
               <ListItem 
                 key={index} 
                 sx={{ 
@@ -64,7 +73,7 @@ const RecipeDetails = () => {
                   pl: 1
                 }}
               >
-                <ListItemText primary={ingredient.ingredientName} />
+                <ListItemText primary={formatIngredient(ingredient)} />
               </ListItem>
             ))}
           </List>
