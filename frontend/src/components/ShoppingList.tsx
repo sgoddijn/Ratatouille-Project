@@ -7,8 +7,6 @@ interface Ingredient {
   conversions: string[];
 }
 
-
-
 const ShoppingList = () => {
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [loading, setLoading] = useState(true);
@@ -19,7 +17,7 @@ const ShoppingList = () => {
         const response = await fetch('http://localhost:3000/api/mealplan/current');
         if (!response.ok) throw new Error('Failed to fetch meal plan');
         const mealPlan = await response.json();
-        const ingredientArray: string[] = [];
+        const ingredientArray: Ingredient[] = [];
 
         // Extract ingredients from the meal plan
         for (const day in mealPlan) {
@@ -60,12 +58,11 @@ const ShoppingList = () => {
         <Typography>Loading ingredients...</Typography>
       ) : (
         <List>
-          {Object.entries(ingredients).length > 0 ? (
-            Object.entries(ingredients).map(([ingredient, amount], index) => (
+          {ingredients.length > 0 ? (
+            ingredients.map((ingredient, index) => (
               <ListItem key={index}>
                 <ListItemText 
-                  primary={ingredient}
-                  secondary={amount}
+                  primary={`${index}. ${ingredient.ingredientName} - ${ingredient.amount}`}
                 />
               </ListItem>
             ))
