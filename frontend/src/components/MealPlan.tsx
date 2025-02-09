@@ -17,6 +17,7 @@ interface Recipe {
   macros: Macros;
   imageUrl?: string;
   description?: string;
+  cookTime?: string;
 }
 
 interface DayPlan {
@@ -34,15 +35,30 @@ const DayCard = styled(Paper)(({ theme }) => ({
   height: '100%',
   display: 'flex',
   flexDirection: 'column',
-  width: `46%`,
+  width: `40%`,
   gap: theme.spacing(2),
   marginBottom: theme.spacing(2),
 }));
 
+const MealTypeHeader = styled(Typography)(({ theme }) => ({
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  right: 0,
+  padding: `0px 0px 0px ${theme.spacing(2)}`,
+  color: theme.palette.primary.main,
+  fontSize: '0.8rem',
+  textTransform: 'uppercase',
+  textAlign: `left`,
+  borderTopLeftRadius: theme.shape.borderRadius,
+  borderTopRightRadius: theme.shape.borderRadius,
+}));
+
 const MealSlotBox = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(2),
+  paddingTop: theme.spacing(4),
   flex: 1,
-  minHeight: '225px',
+  minHeight: '150px',
   display: 'flex',
   flexDirection: 'column',
   gap: theme.spacing(1),
@@ -67,8 +83,9 @@ const RecipeImage = styled('img')({
 
 const MacrosBox = styled(Box)(({ theme }) => ({
   display: 'flex',
-  gap: theme.spacing(2),
-  fontSize: '0.875rem',
+  flexWrap: 'wrap',
+  gap: theme.spacing(1),
+  fontSize: '0.75rem',
   color: theme.palette.text.secondary,
 }));
 
@@ -183,16 +200,14 @@ const MealPlan = () => {
 
               {mealTypes.map((mealType) => (
                 <MealTypesContainer>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
-                    <Typography variant="subtitle1" sx={{ textTransform: 'capitalize' }}>
-                    {mealType}
-                    </Typography>
-                  </Box>
                   <MealSlotBox 
                     key={mealType} 
                     elevation={1}
                     onClick={() => weekPlan[day]?.[mealType] && handleRecipeClick(weekPlan[day][mealType])}
                   >
+                    <MealTypeHeader>
+                      {mealType}
+                    </MealTypeHeader>
                     {weekPlan[day]?.[mealType] ? (
                       <>
                         {weekPlan[day][mealType].imageUrl && (
@@ -204,34 +219,28 @@ const MealPlan = () => {
                         <Typography variant="body1" sx={{ pr: 9 }}>
                           {weekPlan[day][mealType].title}
                         </Typography>
-                        <Typography 
-                          variant="body2" 
-                          color="text.secondary" 
-                          sx={{ 
-                            display: '-webkit-box',
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: 'vertical',
-                            overflow: 'hidden',
-                            flex: 1
-                          }}
-                        >
-                          {weekPlan[day][mealType].description}
+                        <Typography variant="caption" color="text.secondary">
+                          Cook Time: {weekPlan[day][mealType].cookTime || 'Not specified'}
                         </Typography>
                         <MacrosBox>
                           <Typography variant="caption">
                             {weekPlan[day][mealType].macros.calories} cal
                           </Typography>
+                          <Typography variant="caption">
+                            {weekPlan[day][mealType].macros.protein}g protein
+                          </Typography>
+                          <Typography variant="caption">
+                            {weekPlan[day][mealType].macros.carbs}g carbs
+                          </Typography>
+                          <Typography variant="caption">
+                            {weekPlan[day][mealType].macros.fat}g fat
+                          </Typography>
                         </MacrosBox>
                       </>
                     ) : (
-                      <>
-                        <Typography color="text.secondary" sx={{ flex: 1 }}>
-                          No recipe chosen
-                        </Typography>
-                        <MacrosBox>
-                          <Typography variant="caption">No macros yet</Typography>
-                        </MacrosBox>
-                      </>
+                      <Typography color="text.secondary" sx={{ flex: 1 }}>
+                        No recipe chosen
+                      </Typography>
                     )}
                   </MealSlotBox>
                 </MealTypesContainer>

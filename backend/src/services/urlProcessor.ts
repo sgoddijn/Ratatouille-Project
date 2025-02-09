@@ -6,6 +6,7 @@ import { PromptTemplate } from "npm:@langchain/core/prompts";
 import { RunnableMap, RunnableSequence } from "npm:@langchain/core/runnables";
 import { z } from 'zod';
 import { conversionTable } from '../helpers/conversionTable.ts';
+import { OpenAI } from 'npm:openai';
 
 // Create LangChain model
 const model = new ChatAnthropic({
@@ -17,13 +18,9 @@ const model = new ChatAnthropic({
   method: "function_calling"
 });
 
-const imageModel = new ChatAnthropic({
-  modelName: "claude-3-5-sonnet-20241022",
-  maxTokens: 1024,
-  temperature: 0,
-  anthropicApiKey: Deno.env.get('ANTHROPIC_API_KEY')
-}).withStructuredOutput(LangchainImage, {
-  method: "function_calling"
+const imageGenerator = new OpenAI({
+  baseURL: 'https://external.api.recraft.ai/v1',
+  apiKey: Deno.env.get('RECRAFT_API_KEY'),
 });
 
 const ingredientModel = new ChatAnthropic({
@@ -47,18 +44,6 @@ const recipePrompt = new PromptTemplate({
           The rating will usually be a number between 1 and 5, and the number of reviews will be associated with that rating.
   `,
   inputVariables: ["cleanHtml", "imageUrls"]
-});
-
-// Prompt to get the best image from the HTML content
-const imagePrompt = new PromptTemplate({
-  template: `
-    You are a culinary analyst, who's goal is to extract the best image from the HTML content for the recipe in question. 
-
-    Context: {imageUrls}
-
-    Task: We want to extract the best image from the HTML content and return the URL.
-  `,
-  inputVariables: ["imageUrls"]
 });
 
 // Prompt to get the ingredients normalized from the initial list
@@ -142,9 +127,12 @@ export async function processUrl(url: string): Promise<Recipe> {
     const parallelChain = RunnableMap.from([
       {
         recipe: recipePrompt.pipe(model),
-        image: imagePrompt.pipe(imageModel)
+        // image: imagePrompt.pipe(imageModel)
       }
     ]);
+
+    // TODO: make the recipe give back a one line description for the image
+    // TODO: run the ingredients and image in parallel
 
     // Do the ingredients once we have the results from the recipe model
     const sequentialChain = RunnableSequence.from([
@@ -156,14 +144,18 @@ export async function processUrl(url: string): Promise<Recipe> {
       async (result: {recipe: z.infer<typeof LangchainRecipe>, image: z.infer<typeof LangchainImage>}) => {
         const ingredientList = result.recipe.ingredients;
         const ingredients = await ingredientPrompt.pipe(ingredientModel).invoke({ingredientList, conversionTable});
-        return {recipe: result.recipe, image: result.image, ingredients};
+        const image = await imageGenerator.images.generate({
+          prompt: `An image of ${result.recipe.title}`,
+          style: "realistic_image",
+        });
+        return {recipe: result.recipe, image: image.data[0], ingredients};
       }
     ]);
 
     // Run the chain
     const result = await sequentialChain.invoke({cleanHtml, imageUrls});
     const recipe = result.recipe;
-    const imageUrl = result.image.imageUrl;
+    const imageUrl = result.image.url;
     const ingredients = result.ingredients.ingredients;
 
     // Return the result
