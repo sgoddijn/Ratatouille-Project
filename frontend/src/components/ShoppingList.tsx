@@ -8,6 +8,7 @@ interface Ingredient {
 }
 
 const ShoppingList = () => {
+  // TODO: I need to clean up all these 'ingredients' versions. Different format everywhere lol. 
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [loading, setLoading] = useState(true);
 
