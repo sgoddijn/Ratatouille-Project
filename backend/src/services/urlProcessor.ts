@@ -1,12 +1,14 @@
-import axios from 'axios';
+import axios from 'npm:axios';
 import { Recipe } from '../../../shared/Recipe.ts';
 import { LangchainRecipe, LangchainImage, LangchainIngredients } from '../models/LangchainModels.ts';
 import { ChatAnthropic } from "npm:@langchain/anthropic";
 import { PromptTemplate } from "npm:@langchain/core/prompts";
 import { RunnableMap, RunnableSequence } from "npm:@langchain/core/runnables";
-import { z } from 'zod';
+import { z } from 'npm:zod';
 import { conversionTable } from '../helpers/conversionTable.ts';
 import { OpenAI } from 'npm:openai';
+import * as cheerio from 'npm:cheerio';
+import fetch from "npm:node-fetch";
 
 // Create LangChain model
 const model = new ChatAnthropic({
@@ -113,62 +115,176 @@ const cleanPageHTML = (html: string): string => {
 // Process a URL and return a Recipe object
 export async function processUrl(url: string): Promise<Recipe> {
   try {
-    // First fetch the HTML content
-    const response = await axios.get(url);
+    console.log(`Attempting to fetch recipe from URL: ${url}`);
+    
+    // Check if URL is from a known problematic domain
+    const urlObj = new URL(url);
+    const hostname = urlObj.hostname.toLowerCase();
+    
+    // List of known domains that often block scraping
+    const problematicDomains = [
+      'allrecipes.com',
+      'foodnetwork.com',
+      'epicurious.com',
+      'thekitchn.com',
+      'delish.com',
+      'bonappetit.com',
+      'seriouseats.com',
+      'simplyrecipes.com'
+    ];
+    
+    let response;
+    const isProblematicDomain = problematicDomains.some(domain => hostname.includes(domain));
+    
+    // Use a different approach for problematic domains
+    if (isProblematicDomain) {
+      console.log(`Using specialized approach for potentially problematic domain: ${hostname}`);
+      
+      try {
+        const headers = {
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5 Safari/605.1.15',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.9',
+          'Referer': 'https://www.google.com/search?q=recipe',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        };
+        
+        response = await axios.get(url, {
+          headers,
+          timeout: 30000,
+          validateStatus: status => status >= 200 && status < 500
+        });
+      } catch (error) {
+        console.log(`First attempt failed for ${hostname}, trying alternative approach...`);
+        
+        const fallbackHeaders = {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.5',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+          'Upgrade-Insecure-Requests': '1'
+        };
+        
+        response = await axios.get(url, {
+          headers: fallbackHeaders,
+          timeout: 30000,
+          validateStatus: status => status >= 200 && status < 500
+        });
+      }
+    } else {
+      // Standard approach for normal domains
+      const standardHeaders = {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Cache-Control': 'max-age=0',
+        'Connection': 'keep-alive',
+        'Referer': 'https://www.google.com/',
+        'Upgrade-Insecure-Requests': '1'
+      };
+      
+      response = await axios.get(url, {
+        headers: standardHeaders,
+        maxRedirects: 5,
+        timeout: 10000
+      });
+    }
+    
+    // Check if we got a successful response
+    if (response.status !== 200) {
+      console.error(`Received status ${response.status} from ${url}`);
+      if (response.status === 403) {
+        throw new Error(`Access forbidden (403). The website at ${hostname} is blocking recipe scraping.`);
+      } else {
+        throw new Error(`Received non-success status code: ${response.status} from ${url}`);
+      }
+    }
+    
+    console.log(`Successfully fetched URL with status: ${response.status}`);
     const rawHtml = response.data;
 
     // Extract image URLs before cleaning HTML
     const imageUrls = extractImageUrls(rawHtml);
 
     // Remove scripts, styles, and other non-content elements
-    const cleanHtml = cleanPageHTML(rawHtml)
+    const cleanHtml = cleanPageHTML(rawHtml);
 
-    // Do the recipe and image in parallel
-    const parallelChain = RunnableMap.from([
-      {
-        recipe: recipePrompt.pipe(model),
-        // image: imagePrompt.pipe(imageModel)
-      }
-    ]);
+    // Process the recipe data
+    const parallelChain = RunnableMap.from([{
+      recipe: recipePrompt.pipe(model)
+    }]);
 
-    // TODO: make the recipe give back a one line description for the image
-    // TODO: run the ingredients and image in parallel
-
-    // Do the ingredients once we have the results from the recipe model
     const sequentialChain = RunnableSequence.from([
       parallelChain,
       (result: [{recipe: z.infer<typeof LangchainRecipe>, image: z.infer<typeof LangchainImage>}]) => {
-        console.log(result);
-        return {recipe: result[0].recipe, image: result[0].image,};
+        return {recipe: result[0].recipe, image: result[0].image};
       }, 
       async (result: {recipe: z.infer<typeof LangchainRecipe>, image: z.infer<typeof LangchainImage>}) => {
-        const ingredientList = result.recipe.ingredients;
-        const ingredients = await ingredientPrompt.pipe(ingredientModel).invoke({ingredientList, conversionTable});
-        const image = await imageGenerator.images.generate({
-          prompt: `An image of ${result.recipe.title}`,
-          style: "realistic_image",
-        });
+        // Run ingredient processing and image generation in parallel
+        const [ingredients, image] = await Promise.all([
+          ingredientPrompt.pipe(ingredientModel).invoke({
+            ingredientList: result.recipe.ingredients, 
+            conversionTable
+          }),
+          imageGenerator.images.generate({
+            prompt: `An image of ${result.recipe.title}`,
+            style: "natural",
+          })
+        ]);
+        
         return {recipe: result.recipe, image: image.data[0], ingredients};
       }
     ]);
 
-    // Run the chain
+    // Run the chain and extract results
     const result = await sequentialChain.invoke({cleanHtml, imageUrls});
-    const recipe = result.recipe;
-    const imageUrl = result.image.url;
-    const ingredients = result.ingredients.ingredients;
-
-    // Return the result
+    
+    // Return the formatted recipe
     return {
-      ...recipe,
-      ingredients,
-      imageUrl,
+      ...result.recipe,
+      ingredients: [{ 
+        ingredientName: result.ingredients.ingredients && result.ingredients.ingredients.length > 0 
+          ? result.ingredients.ingredients[0].ingredientName 
+          : '',
+        quantity: result.ingredients.ingredients && result.ingredients.ingredients.length > 0 
+          ? result.ingredients.ingredients[0].quantity 
+          : '',
+        conversions: result.ingredients.ingredients && result.ingredients.ingredients.length > 0 
+          ? result.ingredients.ingredients[0].conversions 
+          : []
+      }],
+      imageUrl: result.image.url,
       recipeUrl: url,
       createdAt: new Date()
     };
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error processing URL:', error);
-    throw new Error('Failed to process recipe URL');
-    // TODO: Show user that there was an error
+    
+    // More detailed error logging
+    if (error && typeof error === 'object' && 'isAxiosError' in error) {
+      const axiosError = error as any;
+      console.error(`Axios error details: 
+        - Message: ${axiosError.message}
+        - Code: ${axiosError.code}
+        - Status: ${axiosError.response?.status}
+        - Status Text: ${axiosError.response?.statusText}
+        - URL: ${url}
+      `);
+      
+      if (axiosError.response?.status === 403) {
+        throw new Error(`Access forbidden (403). The website at ${url} is blocking recipe scraping.`);
+      } else if (axiosError.response) {
+        throw new Error(`Server responded with status ${axiosError.response.status} when accessing ${url}`);
+      } else if (axiosError.request) {
+        throw new Error(`No response received from ${url}. Please check the URL or try again later.`);
+      }
+    }
+    
+    // Generic fallback error if not an Axios error
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to extract recipe from ${url}: ${errorMessage}`);
   }
 } 

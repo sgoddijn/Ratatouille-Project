@@ -39,13 +39,46 @@ app.post('/api/recipes/url', (async (req: Request, res: Response) => {
       res.status(400).json({ error: 'URL is required' });
       return;
     }
+    
+    console.log(`Processing recipe URL: ${url}`);
+    
+    // Check if the URL is valid
+    try {
+      new URL(url);
+    } catch (urlError) {
+      console.error('Invalid URL format:', urlError);
+      return res.status(400).json({ error: 'Invalid URL format. Please provide a valid URL starting with http:// or https://' });
+    }
+    
+    // Process the URL
     const recipeData = await processUrl(url);
+    
+    // Create and save the recipe
     const recipe = new Recipe(recipeData);
     await recipe.save();
+    
+    console.log(`Successfully processed and saved recipe from: ${url}`);
     res.json(recipe);
   } catch (error) {
     console.error('Error processing URL:', error);
-    res.status(500).json({ error: 'Failed to process recipe URL' });
+    
+    // Prepare detailed error response
+    const errorMessage = error.message || 'Failed to process recipe URL';
+    const statusCode = error.message?.includes('403') ? 403 : 500;
+    
+    // Include suggestions for 403 errors
+    if (statusCode === 403) {
+      return res.status(statusCode).json({ 
+        error: errorMessage,
+        suggestions: [
+          'Try a different recipe website that allows scraping',
+          'Some popular sites like AllRecipes or Food Network have measures to prevent scraping',
+          'Try a recipe URL from blogs or smaller recipe sites'
+        ] 
+      });
+    }
+    
+    res.status(statusCode).json({ error: errorMessage });
   }
 }) as RequestHandler);
 
