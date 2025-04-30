@@ -12,7 +12,7 @@
             "program": "${workspaceFolder}/backend/src/server.ts",
             "cwd": "${workspaceFolder}/backend",
             "env": {},
-            "runtimeExecutable": "/Users/sebgoddijn/.deno/bin/deno",
+            "runtimeExecutable": "/usr/local/bin/deno",
             "runtimeArgs": [
                 "run",
                 "--unstable",
